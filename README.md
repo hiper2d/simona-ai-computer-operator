@@ -13,3 +13,11 @@ Key components:
 - Speech to Text (STT)
 - Language Model (LM)
 - Text to Speech (TTS)
+
+# References and inspiration
+
+I got inspired by the following projects:
+- [self-operating-computer](https://github.com/OthersideAI/self-operating-computer/tree/main)
+- [speech-to-speech](https://github.com/huggingface/speech-to-speech/tree/main)
+
+The reason I don't fork them is that my vision is slightly different, and I want to learn how to create such system from scratch.
