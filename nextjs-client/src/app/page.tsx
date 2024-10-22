@@ -1,31 +1,40 @@
 "use client";
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 
 export default function Home() {
-  const [recording, setRecording] = useState(false);
-  const mediaRecorderRef = useRef(null);
+  const [recording, setRecording] = useState<boolean>(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
 
-  const handleRecording = async () => {
+  const handleRecording = async (): Promise<void> => {
     if (!recording) {
       // Start recording
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream);
+        mediaStreamRef.current = stream; // Store the stream to stop it later
 
-        mediaRecorderRef.current.ondataavailable = (event) => {
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+
+        mediaRecorder.ondataavailable = (event: BlobEvent) => {
           const audioChunk = event.data;
           console.log("Audio chunk:", audioChunk);
           // Later, send audioChunk to backend for processing
         };
 
-        mediaRecorderRef.current.start(1000); // Collect data in 1-second chunks
+        mediaRecorder.start(1000); // Collect data in 1-second chunks
         setRecording(true);
       } catch (err) {
         console.error("Error accessing microphone:", err);
       }
     } else {
       // Stop recording
-      mediaRecorderRef.current.stop();
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
       setRecording(false);
     }
   };
