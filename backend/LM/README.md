@@ -39,16 +39,16 @@ Start web server
 python server.py --port 8000
 ```
 
-Use API calls to download and to run a model. Currently, I use this one https://huggingface.co/mradermacher/Llama-3-11B-GGUF
+Use API calls to download and to run a model. Currently, I use this one https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
 
 Download the model
 ```bash
 curl -X POST "http://localhost:8000/download_model" \
      -H "Content-Type: application/json" \
      -d '{
-           "repo_id": "leafspark/Llama-3.2-11B-Vision-Instruct-GGUF",
-           "filename": "Llama-3.2-11B-Vision-Instruct.Q4_K_M.gguf",
-           "model_name": "Llama-3.2-11B-Vision-Instruct.Q4_K_M.gguf"
+           "repo_id": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
+           "filename": "Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf",
+           "model_name": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF"
          }'
 ```
 
@@ -62,7 +62,7 @@ Load the model to memory
 curl -X POST "http://localhost:8000/load_model" \
      -H "Content-Type: application/json" \
      -d '{
-           "model_name": "Llama-3.2-11B-Vision-Instruct.Q4_K_M.gguf"
+           "model_name": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF"
          }'
 ```
 
@@ -71,7 +71,7 @@ Talk to a model (currently loaded)
 curl -X POST "http://localhost:8000/completion" \
      -H "Content-Type: application/json" \
      -d '{
-           "prompt": "Hello, how are you?",
+           "prompt": "Hi, how are you?",
            "max_tokens": 1024
          }'
 ```

@@ -8,9 +8,19 @@ from typing import List
 from llama_cpp import Llama
 from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Add the prompt template at the top of your script
+PROMPT_TEMPLATE = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+Cutting Knowledge Date: December 2023
+Today Date: {current_date}
+
+{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>
+{user_prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+"""
 
 # Define request and response models
 class CompletionRequest(BaseModel):
@@ -157,13 +167,29 @@ def generate_completion(request: CompletionRequest):
     if llm is None:
         raise HTTPException(status_code=500, detail="Model is not loaded. Please load a model first.")
 
+    # Get the current date
+    current_date = datetime.now().strftime("%d %b %Y")
+
+    # Define the system prompt
+    system_prompt = "You are a helpful assistant."
+
+    # Format the prompt using the template
+    formatted_prompt = PROMPT_TEMPLATE.format(
+        current_date=current_date,
+        system_prompt=system_prompt,
+        user_prompt=request.prompt
+    )
+
+    # Generate the response
     output = llm(
-        request.prompt,
+        formatted_prompt,
         max_tokens=request.max_tokens,
-        stop=["</s>"],
+        stop=["<|end_of_text|>", "<|eot_id|><|start_header_id|>user<|end_header_id|>"],
         echo=False,
     )
-    return CompletionResponse(completion=output['choices'][0]['text'])
+
+    # Return the assistant's reply
+    return CompletionResponse(completion=output['choices'][0]['text'].strip())
 
 # Run the app
 if __name__ == "__main__":
