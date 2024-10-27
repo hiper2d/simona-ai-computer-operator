@@ -1,36 +1,46 @@
-# Use an appropriate base image
-FROM python:3.10-slim
+# Use the official Python image as base
+FROM python:3.9-slim-buster
 
-# Install necessary system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
+    git \
+    curl \
     wget \
-    && rm -rf /var/lib/apt/lists/*
+    ca-certificates \
+    libopenblas-dev \
+    python3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install llama.cpp
-RUN git clone https://github.com/ggerganov/llama.cpp.git /opt/llama.cpp
-WORKDIR /opt/llama.cpp
-# Build with GPU support if CUDA is available
-RUN if [ -d "/usr/local/cuda" ]; then \
-        LLAMA_CUBLAS=1 make; \
-    else \
-        make; \
-    fi
+# Install CUDA libraries (CUDA 11.8 in this example)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libcudnn8=8.6.0.163-1+cuda11.8 \
+    libcudnn8-dev=8.6.0.163-1+cuda11.8 && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+# Set environment variables for CUDA
+ENV CUDA_HOME=/usr/local/cuda
+ENV PATH=${CUDA_HOME}/bin:${PATH}
+ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 
-# Copy application code
-COPY server.py /app/app.py
-
-# Expose ports
-EXPOSE 8000 8888
-
-# Set the working directory
+# Create a working directory
 WORKDIR /app
 
-# Start Jupyter Notebook server on container start
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]
+# Copy the requirements file
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the FastAPI app
+COPY server.py .
+COPY .env .env
+
+# Expose the port
+EXPOSE 8000
+
+# Set the entrypoint to run the server
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
