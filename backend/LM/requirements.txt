@@ -1,6 +1,0 @@
-fastapi
-pydantic
-uvicorn
-huggingface_hub
-llama-cpp-python
-python-dotenv

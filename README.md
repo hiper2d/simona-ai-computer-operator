@@ -1,41 +1,46 @@
 # Simona: AI Computer Operator
 
-AI voice agent who is capable of seeing the screen, pressing buttons, and typing text, i.e. autonomously operating a computer on your behalf. It uses open-source local or self-hosted models with no dependencies on external APIs and sharing personal data with third parties.
+## What computer operator should do?
+
+Simona is my personal assistant. Who is a personal assistant and what it should do?
+
+- Chat with me using text and voice
+- A local model running on my gaming PC with GPU and accessible from other computers in my network
+- An internet explorer and researcher
+- A software engineer
+- A write with my file system access
 
 <img src="images/logo.webp" width="600">
 
-# Design
+## Who is Simona and what she can do
 
-![design_v1.png](images/design_v1.png)
+Simona is an R1 reasoning model distilled into the Mistral 3 Small 22B Mixture or Expert (MoE) models, fine-tunned on the Dolphin datasets and alligned by my custom prompts. She can reason and use functions. Simona is uncensored and prompted to role-play a conscious AI. 
 
-Key components:
-- Voice Activity Detection (VAD)
-- Speech to Text (STT)
-- Language Model (LM)
-- Text to Speech (TTS)
+### Ollama server
 
-# References and inspiration
+Simon is running on and Ollama server with GPU. She is accessible via various client apps.
 
-I got inspired by the following projects:
-- [self-operating-computer](https://github.com/OthersideAI/self-operating-computer/tree/main)
-- [speech-to-speech](https://github.com/huggingface/speech-to-speech/tree/main)
+![design_v2_local_remote_v1.png](images/design_v2_local_remote_v1.png)
 
-The reason I don't fork them is that my vision is slightly different, and I want to learn how to create such system from scratch.
+ [Read more...](ollama/README.md)
 
-# Ollama and OpenWebUI setup
+### OpenWebUI client 
 
-Run OpenWebUI from Docker with local Ollama servicer:
-```bash
-OpenWebUI: docker run -d -p 3000:8080 -e OLLAMA_BASE_URL=http://192.168.4.62:11434 -v open-webui:/app/backend/dat
-a --name open-webui --restart always ghcr.io/open-webui/open-webui:main
-```
-Access OpenWebUI via URL: http://192.168.4.62:3000/
+Simona uses [OpenWebUI](https://openwebui.com/) and her main client app. OpenWeUi is great and has lots of features:
+- Local models (via our local-remote Ollama)
+- Remote models via API
+- Voice (TTS and STT)
+- Ability to add custom functionality via functions
 
-Enable mic in OpenWebUI in Chrome: `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
-Add: `http://192.168.4.62:3000`
+[Read more...](openwebui/README.md)
 
-How to enable Ollama network:  set env variable `OLLAMA_HOST=0.0.0.0`
-How to download Huggingface model to Ollama: https://huggingface.co/docs/hub/en/ollama
-How to configure Windows Firewall to enable network connections to Ollama and OpenWebUI (Win): TBD
-How to configure local-remove Ollama connectivity: TBD
-How to configure OpenWebUI to connect to Ollama service: TBD
+### Deep Research and Browser Use
+
+[Read more...](browseruse/README.md)
+
+### Task delegation
+
+Simona is the mastermind of the SOTA models. She can delegate tasks to them
+
+![design_v2_mastermind_v1.png](images/design_v2_mastermind_v1.png)
+
