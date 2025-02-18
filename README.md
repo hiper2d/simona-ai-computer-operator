@@ -20,7 +20,7 @@ Simona is an R1 reasoning model distilled into the Mistral 3 Small 22B Mixture o
 
 Simon is running on and Ollama server with GPU. She is accessible via various client apps.
 
-![design_v2_local_remote_v1.png](images/design_v2_local_remote_v1.png)
+<img src="images/design_v2_local_remote_v1.png" width="1000">
 
  [Read more...](ollama/README.md)
 
@@ -42,5 +42,5 @@ Simona uses [OpenWebUI](https://openwebui.com/) and her main client app. OpenWeU
 
 Simona is the mastermind of the SOTA models. She can delegate tasks to them
 
-![design_v2_mastermind_v1.png](images/design_v2_mastermind_v1.png)
+<img src="images/design_v2_mastermind_v1.png" width="1000">
 
