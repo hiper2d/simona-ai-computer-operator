@@ -36,7 +36,7 @@ Add: `http://192.168.4.62:3000`
 - Click on `Values` and add your Anthropic API key
 - Enable the new function
 
-## Add Claude models
+### Add Anthropic Claude models
 
 - Import the official Anthropic function: https://openwebui.com/f/justinrahb/anthropic
 - Modify the function to leave only desired models. For example:
@@ -49,15 +49,18 @@ Add: `http://192.168.4.62:3000`
         ]
     ```
 
-## Add Google Gemini models:
+### Add Google Gemini models
 
 - Import the function: https://openwebui.com/f/matthewh/google_genai
 - Update the `get_google_models` function content to pull-in only the models you need:
   ```python
   if model.name in ["models/gemini-2.0-flash-thinking-exp", "models/gemini-2.0-pro-exp", "models/gemini-2.0-flash", "models/gemini-1.5-pro"]
   ```
+  
+Find model names here: https://ai.google.dev/gemini-api/docs/models/gemini
+Also, get yourself familiar with limits: https://ai.google.dev/gemini-api/docs/rate-limits#paid-tier-1
 
-## Add DeepSeek and Gemini models
+### Add DeepSeek R1 model
 
 - Import the function: https://openwebui.com/f/zgccrui/deepseek_r1
 
