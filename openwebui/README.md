@@ -13,16 +13,32 @@ docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock containrrr/wa
 ```
 Access OpenWebUI via URL: http://localhost:3000/
 
-Configure Ollama in OpenWebUI:
+Enable mic in OpenWebUI in Chrome: `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
+Add: `http://192.168.4.62:3000`
+
+## Configure Ollama in OpenWebUI
+
 - Navigate to `Settings` > `Admin Settings` > `Settings` (tab) > `Connections` > `Manage Ollama API Connections`
-- Enter you Remove Ollama server URL: http://<remove_ollama_server_ip>:11434
+- Enter you remote Ollama server URL: http://<remove_ollama_server_ip>:11434
+
+## Add OpenAI models
+
+- Navigate to `Settings` > `Connections` > `Add connection`
+- Provide the base URL: https://api.openai.com/v1
+- Add you API key
+- Add the model id: o3-mini
+
+## Add other external models
+
+- Each provider requires you to import a function
+- Then navigate to `Settings` > `Admin Settings` > `Functions` (tab)
+- Edit the function if needed
+- Click on `Values` and add your Anthropic API key
+- Enable the new function
 
 ## Add Claude models
 
-- Add this [Anthropic](https://openwebui.com/f/justinrahb/anthropic) function.
-- Navigate to `Settings` > `Admin Settings` > `Functions` (tab)
-- Enable Anthropic Function
-- Click on `Values` and add your Anthropic API key
+- Import the official Anthropic function: https://openwebui.com/f/justinrahb/anthropic
 - Modify the function to leave only desired models. For example:
     ```python
     def get_anthropic_models(self):
@@ -33,17 +49,16 @@ Configure Ollama in OpenWebUI:
         ]
     ```
 
+## Add Google Gemini models:
+
+- Import the function: https://openwebui.com/f/matthewh/google_genai
+- Update the `get_google_models` function content to pull-in only the models you need:
+  ```python
+  if model.name in ["models/gemini-2.0-flash-thinking-exp", "models/gemini-2.0-pro-exp", "models/gemini-2.0-flash", "models/gemini-1.5-pro"]
+  ```
+
 ## Add DeepSeek and Gemini models
 
-- [DeepSeek](https://openwebui.com/f/zgccrui/deepseek_r1) function
--
+- Import the function: https://openwebui.com/f/zgccrui/deepseek_r1
 
-
-Enable mic in OpenWebUI in Chrome: `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
-Add: `http://192.168.4.62:3000`
-
-How to enable Ollama network:  set env variable `OLLAMA_HOST=0.0.0.0`
-How to download Huggingface model to Ollama: https://huggingface.co/docs/hub/en/ollama
-How to configure Windows Firewall to enable network connections to Ollama and OpenWebUI (Win): TBD
-How to configure local-remove Ollama connectivity: TBD
-How to configure OpenWebUI to connect to Ollama service: TBD
+This will add the R1 reasoning model, no other modifications are needed
