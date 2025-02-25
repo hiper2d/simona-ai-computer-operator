@@ -42,8 +42,8 @@ There is a nice Anthropic function in this Github repo: https://github.com/carlo
 
 Follow the instructions and copy the anthropic.py function code. It will add the following models:
 - Claude 3.7 Sonnet (latest)
-- Claude 3.7 Sonnet (latest) with Thinking
-- Claude 3.5 Sonnet
+- Claude 3.7 Sonnet (latest) with Extended Reasoning
+- Claude 3.5 Sonnet (latest)
 
 ### Add Google Gemini models
 
