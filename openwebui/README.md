@@ -38,25 +38,32 @@ Add: `http://192.168.4.62:3000`
 
 ### Add Anthropic Claude models
 
-- Import the official Anthropic function: https://openwebui.com/f/justinrahb/anthropic
-- Modify the function to leave only desired models. For example:
-    ```python
-    def get_anthropic_models(self):
-        return [
-            {"id": "claude-3-opus-20240229", "name": "claude-3-opus"},
-            {"id": "claude-3-5-haiku-latest", "name": "claude-3.5-haiku"},
-            {"id": "claude-3-5-sonnet-latest", "name": "claude-3.5-sonnet"},
-        ]
-    ```
+There is a nice Anthropic function in this Github repo: https://github.com/carlosaln/open-webui-functions
+
+Follow the instructions and copy the anthropic.py function code. It will add the following models:
+- Claude 3.7 Sonnet (latest)
+- Claude 3.7 Sonnet (latest) with Thinking
+- Claude 3.5 Sonnet
 
 ### Add Google Gemini models
 
 - Import the function: https://openwebui.com/f/matthewh/google_genai
 - Update the `get_google_models` function content to pull-in only the models you need:
   ```python
-  if model.name in ["models/gemini-2.0-flash-thinking-exp", "models/gemini-2.0-pro-exp", "models/gemini-2.0-flash", "models/gemini-1.5-pro"]
+  def get_google_models(self):
+      models = []
+      available_models = [
+          "models/gemini-2.0-flash-thinking-exp",
+          "models/gemini-2.0-pro-exp",
+          "models/gemini-2.0-flash",
+          "models/gemini-1.5-pro"
+      ]
+      for model in self.models:
+          if model.name in available_models:
+              models.append(model)
+      return models
   ```
-  
+
 Find model names here: https://ai.google.dev/gemini-api/docs/models/gemini
 Also, get yourself familiar with limits: https://ai.google.dev/gemini-api/docs/rate-limits#paid-tier-1
 
