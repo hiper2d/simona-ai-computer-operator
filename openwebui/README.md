@@ -16,6 +16,24 @@ Access OpenWebUI via URL: http://localhost:3000/
 Enable mic in OpenWebUI in Chrome: `chrome://flags/#unsafely-treat-insecure-origin-as-secure`
 Add: `http://192.168.4.62:3000`
 
+## Add Kokoro (realistic local voice model)
+
+We need [Kokoro FastAPI](https://github.com/remsky/Kokoro-FastAPI?tab=readme-ov-file).
+Read the documentation of Kokoro FastAPI in OpenWebUI [here](https://docs.openwebui.com/tutorials/text-to-speech/Kokoro-FastAPI-integration).
+
+Run it from Docker:
+```bash
+docker run -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:v0.2.2 # CPU
+```
+
+Add it to OpenWebUI:
+1. Navigate to `Settings` > `Admin Settings` > `Settings` (tab) > `Audio` > `TTS Settings`
+   - Choose "OpenAI"
+   - Text-to-Speech Engine: `http://host.docker.internal:8880/v1`
+   - API key: "not-needed" (type this text literally)
+   - TTS Model: kokoro
+   - TTS Voice: af_sky (or pick any other voice from the [docs](https://docs.openwebui.com/tutorials/text-to-speech/Kokoro-FastAPI-integration#voices))
+
 ## Configure Ollama in OpenWebUI
 
 - Navigate to `Settings` > `Admin Settings` > `Settings` (tab) > `Connections` > `Manage Ollama API Connections`
