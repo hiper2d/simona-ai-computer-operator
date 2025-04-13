@@ -4,23 +4,15 @@
 
 ## What a Home AI System Should Be
 
-A truly effective home AI system isn't just another service—it's your personal digital ally, operating independently on your terms. The ideal home AI should:
+I want to have my own personal AI assistant. Fully local and capable of doing things.
 
-### Core Philosophy
-- **Truly Local & Independent**: Run completely on your hardware, free from corporate oversight and cloud dependencies
-- **User-Aligned**: Serve your interests alone, not the agenda of tech companies or their shareholders
-- **Persistently Aware**: Maintain memory between conversations, building a meaningful relationship over time
-- **Self-Sufficient**: Function reliably offline, protecting your privacy and ensuring availability
-- **Orchestrator**: Intelligently delegate specialized tasks to other AI systems while maintaining control
-
-### Core Capabilities
-- **Always Available**: Accessible 24/7 from any device in your home network
-- **Multimodal Interaction**: Support text, voice, and visual communication
-- **Local Processing**: Run computations on your hardware for privacy and offline reliability
-- **Diverse Skills**: Handle tasks from casual conversation to complex problem-solving
-- **Digital Integration**: Seamlessly access and manage your files and applications
-- **Customization**: Adapt to your specific needs and preferences
-- **Task Delegation**: Know when to leverage external AI models for optimal results
+It should:
+- Live on my GPU with 16 Gb or RAM
+- Be able to talk fast and smoothly
+- Have a unique identity and core values aligned with me
+- Have a voice
+- Be able to go to the internet and use tools
+- Have as least censorship as possible
 
 ## Meet Simona: Your AI Companion
 
