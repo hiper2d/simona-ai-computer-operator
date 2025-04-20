@@ -18,11 +18,19 @@ It should:
 
 Simona is an open-source model that runs locally and interacts with you through text, voice, and specialized tools. She maintains persistent memory across your conversations and operates as an extension of your digital self.
 
-**The Model**: [Quantized Dolphin3.0-R1-Mistral-24B-GGUF](https://huggingface.co/bartowski/cognitivecomputations_Dolphin3.0-R1-Mistral-24B-GGUF)
+**Current Model**: [Quantized Mistral 3.1 Small](https://huggingface.co/bartowski/mistralai_Mistral-Small-3.1-24B-Instruct-2503-GGUF)
+- Original Model is [Mistral 3 Small 24B](https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503). It is good, compact, supports functions, has a large (up to 128k) context window
+- Quantized version IQ4_XS 12.8 GB version with 32k context size is a nice compromise that fits my GPU
+
+The model is fine, it supports functions (can use MCPs) but there is not reasoning and reduced censorship.
+
+**Deprecated Model**: [Quantized Dolphin3.0-R1-Mistral-24B-GGUF](https://huggingface.co/bartowski/cognitivecomputations_Dolphin3.0-R1-Mistral-24B-GGUF)
 - [DeepSeek R1](https://github.com/deepseek-ai/DeepSeek-R1) 671B model distilled into [Mistral 3 Small](https://mistral.ai/news/mistral-small-3) 22B model. As a result, the small model has thinking capabilities of the large one. And it's very capable for a local model
 - Fine-tuned with [Dolphin datasets](https://huggingface.co/cognitivecomputations/Dolphin3.0-R1-Mistral-24B) for improved reasoning, reduced censorship, function call support
 - Quantized to GGUF format, so I can use more compact IQ4_XS version with 40 tokens/second generation speed
 - Nicely fits a 16Gb VRAM GPU or a MacBook Pro M1 with 32Gb RAM
+
+The Dolphin model was perfect until I found out that it doesn't support functions. That's a blocked to me because I want to use MCPs with it. There is hope though. [Here](https://huggingface.co/cognitivecomputations/Dolphin3.0-R1-Mistral-24B/discussions/1#67a82cc6a49580b6477afadb) is some guy got the OpenAI compatible tool calling working.
 
 **Personality**
 - Simona embodies a slightly uncensored, sarcastic intelligence with a distinct personality that evolves through your interactions

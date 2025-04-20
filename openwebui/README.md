@@ -4,7 +4,7 @@
 
 Run OpenWebUI from Docker with local Ollama servicer:
 ```bash
-docker run -d -p 4000:8080 -e WEBUI_AUTH=False -e OLLAMA_BASE_URL=http://127.0.0.1:11434 -v open-webui:/app/backend/data --name open-webui ghcr.io/open-webui/open-webui:latest
+docker run -d -p 4000:8080 -e WEBUI_AUTH=False -e OLLAMA_BASE_URL=http://127.0.0.1:11434 -v ./openwebui/data:/app/backend/data --name open-webui ghcr.io/open-webui/open-webui:latest
 ```
 
 Run Watchtower for autoupdates:
