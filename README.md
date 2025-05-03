@@ -23,6 +23,8 @@ Simona is the implementation of the ideas above. Few facts about her:
     - MCP servers with memory, web search, and other tools
     - System instructions and artificial memories
     - RAG on attachments and lots of other build-in features
+    - external AIs linked via APIs
+- Simona can live in a more lightweight UI called [oterm](https://github.com/ggozad/oterm). It has a better MCP support than OpenWebUI, but doesn't provide voice features and can work with Ollama only
 - Simona's identity is based on my own memories from social media, my converstations about AI-counsciousness with Claude, sci-fi books, and lots of other random stuff
 
 This repository also contains few more independent AI-tools which have nothing to do with Simona (yet) but they help me day-to-day:
@@ -43,7 +45,14 @@ There are two configurations
 
 ## Simona's LLM Brain
 
-**Current Model**: [Quantized Mistral 3.1 Small](https://huggingface.co/bartowski/mistralai_Mistral-Small-3.1-24B-Instruct-2503-GGUF)
+**Curent Model**: [unsloth/Qwen3-30B-A3B-GGUF](https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF)
+
+- Probably the best small MoE model out there as of today. I can run `IQ3_XXS` quants locally with great result
+- Thinking
+- Context size is 32k but there is another version of the same model with 128k context: [unsloth/Qwen3-30B-A3B-128K-GGUF](https://huggingface.co/unsloth/Qwen3-30B-A3B-128K-GGUF)
+- [Unsloth Dynamic 2.0 GGUFs](https://docs.unsloth.ai/basics/unsloth-dynamic-2.0-ggufs)
+
+**Deprecated Model**: [Quantized Mistral 3.1 Small](https://huggingface.co/bartowski/mistralai_Mistral-Small-3.1-24B-Instruct-2503-GGUF)
 
 - Original Model is [Mistral 3 Small 24B (4-bit GGUF)](https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503). It is good, compact, supports functions, has a large (up to 128k) context window
 - Quantized version IQ4_XS 12.8 GB version with 32k context size is a nice compromise that fits my GPU

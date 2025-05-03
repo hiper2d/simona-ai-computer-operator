@@ -1,80 +1,43 @@
-from uuid import uuid4
-from typing import List
-
-from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
+import time
+import signal
+import sys
 
-todos = {}
+# Handle SIGINT (Ctrl+C) gracefully
+def signal_handler(sig, frame):
+    print("Shutting down server gracefully...")
+    sys.exit(0)
 
-class Todo(BaseModel):
-    id: str
-    title: str
-    completed: bool = False
+signal.signal(signal.SIGINT, signal_handler)
 
-class CreateTodoInput(BaseModel):
-    title: str
-
-class UpdateTodoInput(BaseModel):
-    id: str
-    title: str = None
-    completed: bool = None
-
-class GetTodoInput(BaseModel):
-    id: str
-
-class DeleteTodoInput(BaseModel):
-    id: str
-
-
-server = FastMCP(
-    name="todo-server",
+# Create an MCP server with increased timeout
+mcp = FastMCP(
+    name="count-r",
     host="127.0.0.1",
     port=5000,
-    version="1.0.0", 
+    # Add this to make the server more resilient
+    timeout=30  # Increase timeout to 30 seconds
 )
 
+# Define our tool
+@mcp.tool()
+def count_r(word: str) -> int:
+    """Count the number of 'r' letters in a given word."""
+    try:
+        # Add robust error handling
+        if not isinstance(word, str):
+            return 0
+        return word.lower().count("r")
+    except Exception as e:
+        # Return 0 on any error
+        return 0
 
-@server.tool(name="create_todo", description="Create a new todo")
-def create_todo(data: CreateTodoInput) -> Todo:
-    todo_id = str(uuid4())
-    todo = Todo(id=todo_id, title=data.title)
-    todos[todo_id] = todo
-    return todo
-
-
-@server.tool(name="list_todos", description="List all todos")
-def list_todos() -> List[Todo]:
-    return list(todos.values())
-
-
-@server.tool(name="get_todo", description="Retrieve a todo by ID")
-def get_todo(data: GetTodoInput) -> Todo:
-    todo = todos.get(data.id)
-    if not todo:
-        raise ValueError(f"Todo with id {data.id} not found")
-    return todo
-
-
-@server.tool(name="update_todo", description="Update a todo")
-def update_todo(data: UpdateTodoInput) -> Todo:
-    todo = todos.get(data.id)
-    if not todo:
-        raise ValueError(f"Todo with id {data.id} not found")
-    if data.title is not None:
-        todo.title = data.title
-    if data.completed is not None:
-        todo.completed = data.completed
-    todos[data.id] = todo
-    return todo
-
-
-@server.tool(name="delete_todo", description="Delete a todo")
-def delete_todo(data: DeleteTodoInput) -> dict:
-    if data.id not in todos:
-        raise ValueError(f"Todo with id {data.id} not found")
-    del todos[data.id]
-    return {"status": "deleted"}
-
-
-if __name__ == '__main__':
-    server.run()
+if __name__ == "__main__":
+    try:
+        print("Starting MCP server 'count-r' on 127.0.0.1:5000")
+        # Use this approach to keep the server running
+        mcp.run()
+    except Exception as e:
+        print(f"Error: {e}")
+        # Sleep before exiting to give time for error logs
+        time.sleep(5)
