@@ -45,10 +45,19 @@ There are two configurations
 
 ## Simona's LLM Brain
 
-**Curent Model**: [unsloth/Qwen3-30B-A3B-GGUF](https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF)
+**Curent Model**: [mradermacher/Qwen3-30B-A3B-abliterated-GGUF](https://huggingface.co/mradermacher/Qwen3-30B-A3B-abliterated-GGUF)
 
-- Probably the best small MoE model out there as of today. I can run `IQ3_XXS` quants locally with great result
-- Thinking
+- My new favorite model: Qwen3-30B-A3B-abliterated, quantized in GGUF format
+- I use the `Q3_K_S` quantization which offers a good balance of quality and performance
+- Key features:
+  - Strong thinking capabilities with excellent reasoning
+  - Significantly reduced censorship compared to base models
+  - Full function calling support for MCP tools and agents
+- See [HuggingFace model card](https://huggingface.co/mradermacher/Qwen3-30B-A3B-abliterated-GGUF) for details and quantization options
+
+**Deprecated Model**: [unsloth/Qwen3-30B-A3B-GGUF](https://huggingface.co/unsloth/Qwen3-30B-A3B-GGUF)
+
+- A capable model as of early 2025. I could run `IQ3_XXS` quants locally with great results
 - Context size is 32k but there is another version of the same model with 128k context: [unsloth/Qwen3-30B-A3B-128K-GGUF](https://huggingface.co/unsloth/Qwen3-30B-A3B-128K-GGUF)
 - [Unsloth Dynamic 2.0 GGUFs](https://docs.unsloth.ai/basics/unsloth-dynamic-2.0-ggufs)
 
