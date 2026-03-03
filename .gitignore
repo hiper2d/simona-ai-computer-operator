@@ -131,3 +131,9 @@ dist
 
 **/venv-ai
 /openwebui/data/**
+
+# YouTube video extracts
+youtube-extracts/
+
+.idea
+.venv
