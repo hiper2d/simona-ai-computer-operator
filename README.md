@@ -71,11 +71,17 @@ Servers are registered in `.mcp.json` at the project root.
 ## Setup
 
 ```bash
-# Install MCP dependencies
-cd mcp && uv sync
+# One-time: install Python dependencies (requires uv and Python 3.13+)
+uv sync --python 3.13
+
+# After updating pyproject.toml dependencies:
+uv sync
 
 # Start Chrome with debug port for browser-cdp
 bash mcp/browser/start-chrome.sh
+
+# Add your Google API key to .env
+echo "GOOGLE_K=your-key-here" > .env
 
 # Claude Code picks up MCP servers from .mcp.json automatically
 ```

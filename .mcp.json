@@ -1,12 +1,3 @@
 {
-  "mcpServers": {
-    "youtube-analyzer": {
-      "command": "uv",
-      "args": ["run", "--directory", "/Users/hiper2d/projects/simona-ai-computer-operator/mcp", "python", "youtube/server.py"]
-    },
-    "browser-cdp": {
-      "command": "uv",
-      "args": ["run", "--directory", "/Users/hiper2d/projects/simona-ai-computer-operator/mcp", "python", "browser/server.py"]
-    }
-  }
+  "mcpServers": {}
 }

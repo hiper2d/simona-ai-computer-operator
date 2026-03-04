@@ -1,13 +1,11 @@
 [project]
-name = "my-mcp-server"
+name = "simona-ai-computer-operator"
 version = "0.1.0"
-description = "Add your description here"
+description = "Simona AI - autonomous computer operator"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "httpx>=0.27.0",
-    "mcp[cli]>=1.6.0",
-    "pydantic>=2.11.3",
     "websockets>=12.0",
     "youtube-transcript-api>=1.2.4",
     "yt-dlp>=2024.12.0",

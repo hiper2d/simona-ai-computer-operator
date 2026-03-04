@@ -2,7 +2,7 @@
 name: youtube
 description: Analyze YouTube videos — extract transcripts, detect code segments, capture frames, and reconstruct code files shown in videos. Use when the user shares a YouTube URL or asks to extract content from a video.
 argument-hint: <url> [focus instructions]
-allowed-tools: Read, Write, Glob, Grep
+allowed-tools: Read, Write, Glob, Grep, Bash(uv run python mcp/youtube/cli.py *)
 ---
 
 Analyze the YouTube video at: $ARGUMENTS
@@ -10,6 +10,31 @@ Analyze the YouTube video at: $ARGUMENTS
 The first argument is the URL. Any text after the URL is **user instructions** describing what to focus on or extract (e.g., specific code files, configs, techniques, "summarize", "what is this about"). If no extra instructions are given, extract everything relevant you find.
 
 Extract the video ID from the URL (the `v=` parameter or the path after `youtu.be/`).
+
+## CLI Tools
+
+All tools are invoked via bash:
+
+```bash
+# Get transcript (plain text — compact, best for analysis)
+uv run python mcp/youtube/cli.py transcript "URL" --format text
+
+# Get transcript (JSON segments with timestamps — for precise time references)
+uv run python mcp/youtube/cli.py transcript "URL" --format segments
+
+# Get transcript for a time range
+uv run python mcp/youtube/cli.py transcript "URL" --format text --start 60 --end 300
+
+# Find code segments (time ranges where code is likely shown)
+uv run python mcp/youtube/cli.py code-segments "URL"
+
+# Extract video frames as PNG images
+uv run python mcp/youtube/cli.py frames "URL" --start 60 --end 120 --fps 0.5
+
+# Clean up cache
+uv run python mcp/youtube/cli.py cleanup
+uv run python mcp/youtube/cli.py cleanup --all
+```
 
 ## Determine the task type
 
@@ -21,8 +46,8 @@ Choose the right workflow based on the user's request:
 
 ## Phase A: Summary & Analysis (for discussion/news/tutorial videos)
 
-1. Call `get_youtube_transcript` with `format="text"` to get the compact plain-text transcript.
-   - For very long videos (>30 min), fetch in chunks using `start_time`/`end_time` to stay within context limits.
+1. Run `uv run python mcp/youtube/cli.py transcript "URL" --format text` to get the compact plain-text transcript.
+   - For very long videos (>30 min), fetch in chunks using `--start`/`--end` to stay within context limits.
 2. Read the full text and produce:
    - **Summary** — 3–5 sentence overview of the video content
    - **Key points** — Bulleted list of the main arguments, news items, or insights
@@ -33,19 +58,10 @@ Skip saving files unless the user asks — just present the analysis inline.
 
 ## Phase B: Code Extraction (for coding/tutorial videos)
 
-**Approach A: MCP Tools (automated, for batch extraction)**
-1. Call `get_youtube_transcript` with `format="text"` for overall context
-2. Call `find_code_segments` to identify time ranges where code is likely shown
-3. Call `get_video_frames` for each high-confidence segment to extract frames
+1. Run `uv run python mcp/youtube/cli.py transcript "URL" --format text` for overall context
+2. Run `uv run python mcp/youtube/cli.py code-segments "URL"` to identify time ranges where code is likely shown
+3. Run `uv run python mcp/youtube/cli.py frames "URL" --start SEC --end SEC` for each high-confidence segment
 4. Read the frame images to extract code or analyze visual content
-
-**Approach B: Chrome Browser (interactive, for exploration)**
-1. Open the video at a specific timestamp: https://www.youtube.com/watch?v=VIDEO_ID&t=SECONDS
-2. Pause the video and take a screenshot
-3. Read the screenshot to extract code or content
-4. Seek to next timestamp and repeat
-
-Ask the user which approach they prefer, or recommend Approach A for thorough analysis and Approach B for quick spot-checks.
 
 ### Save Extracted Files
 
@@ -63,7 +79,7 @@ The video ID suffix ensures uniqueness; the short name makes the folder scannabl
    - Key timestamps with descriptions of what happens
    - Key takeaways or insights
 
-2. **`transcript.json`** — The full raw transcript (use `format="segments"` with time-range chunks if needed)
+2. **`transcript.json`** — The full raw transcript (use `--format segments` with time-range chunks if needed)
 
 3. **Code files** — Any code, scripts, configs, or structured text extracted from video frames:
    - Use the filename shown in the video if visible (e.g., `ralph.sh`, `config.yaml`, `main.py`)

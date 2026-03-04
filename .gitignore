@@ -135,5 +135,8 @@ dist
 # YouTube video extracts
 youtube-extracts/
 
+__pycache__/
 .idea
 .venv
+.DS_Store
+generated-*/
