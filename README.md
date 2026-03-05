@@ -73,3 +73,6 @@ echo "GOOGLE_K=your-key-here" > .env
 - **YouTube channel automation** — scripting, recording, editing, publishing
 - **REPL Loop** — autonomous worker loop that picks up tasks without supervision
 - **Social media automation** — posting, scheduling, engagement
+
+
+813 996 2044
