@@ -1,6 +1,6 @@
 # Simona: AI Computer Operator
 
-<img src="images/simona.png" width="600">
+<img src="images/simona-2.png" width="600">
 
 ## Who is Simona?
 
@@ -22,6 +22,17 @@ The goal: an AI that can run media channels, create software projects, produce v
 |-------|---------|--------------|
 | **browser** | `/browser [url]` | Browse the web, read pages, click, fill forms via Chrome DevTools Protocol |
 | **youtube** | `/youtube <url>` | Analyze YouTube videos — extract transcripts, code, and content |
+
+### Autonomous Worker
+| Skill | Command | What it does |
+|-------|---------|--------------|
+| **worker** | `/worker start` | Start the worker in continuous loop mode |
+| | `/worker run` | Run one full task to completion, then exit |
+| | `/worker stop` | Stop the worker (finishes current step first) |
+| | `/worker pause` / `resume` | Pause or resume the worker |
+| | `/worker status` | Show worker state, current task, recent log entries |
+| | `/worker task "idea"` | Create a new task file with auto-generated steps |
+| | `/worker list` | List all tasks with status and progress |
 
 ### Pipeline Example
 
@@ -45,12 +56,24 @@ The engine is **Claude Code** (Anthropic's CLI agent), extended with:
 
 ```
 .claude/
-├── skills/          # Skill definitions (youtube, browser, image, voice, video)
+├── skills/          # Skill definitions (youtube, browser, image, voice, video, worker)
 └── memory/          # Persistent memory, updated each session
 
 mcp/
 ├── youtube/         # tools.py + cli.py — transcript, code detection, frames
 └── browser/         # tools.py + cli.py + cdp_client.py — Chrome automation
+
+worker/
+├── loop.sh          # Main worker loop — runs claude --print per step
+├── start.sh         # Start worker in background
+├── stop.sh          # Graceful stop
+├── control.json     # Runtime commands (run/pause/stop)
+├── log.jsonl        # Structured execution log
+└── worker-output.log  # Full Claude output for debugging
+
+tasks/
+├── NNN-slug.md      # Task files with steps and frontmatter
+└── ideas.md         # Backlog — worker auto-converts when out of tasks
 ```
 
 Skills invoke CLI tools like `uv run python mcp/browser/cli.py navigate "https://..."` — no MCP servers, no extra processes, no token overhead from idle tool definitions.
@@ -71,8 +94,5 @@ echo "GOOGLE_K=your-key-here" > .env
 ## What's Next
 
 - **YouTube channel automation** — scripting, recording, editing, publishing
-- **REPL Loop** — autonomous worker loop that picks up tasks without supervision
 - **Social media automation** — posting, scheduling, engagement
-
-
-813 996 2044
+- **Self-improvement** — Simona updating her own skills and memory autonomously

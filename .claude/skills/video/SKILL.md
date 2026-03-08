@@ -82,72 +82,115 @@ Videos are saved to `generated-videos/` in the project root.
 
 When building a slideshow (Mode B), render each scene as a separate clip with motion effects, then concatenate + add audio. This gives per-clip control over effects.
 
-### When to use motion effects
+### Effect selection rules
 
-- **Cinematic / visual scenes** (landscapes, art, photos, diagrams) → Ken Burns zoom or pan. Makes static images feel alive.
-- **Code / text-heavy images** → **No zoom**, or use **vertical scroll** if the image is taller than 1080px. Zooming on code makes it unreadable.
-- **Mix of both** → Alternate effects per scene. Variety keeps the video engaging.
+Choose the effect FIRST, then generate (or request) the image in the correct format.
+
+| Effect | Use when | Image format | Image generation hint |
+|--------|----------|-------------|----------------------|
+| **Zoom** | Photos, illustrations, UI screenshots, anything visual | Standard 16:9 (1920x1080 or similar) | Default — no special instructions |
+| **Vertical scroll** | Code listings, terminal output, tall diagrams, long documents | **Tall portrait** — width=1080, height=1920+ | Prompt: "Generate a TALL PORTRAIT image (vertical, 9:16 aspect ratio)..." |
+| **Horizontal scroll** | Timelines, wide flowcharts, panoramas, side-by-side comparisons | **Wide panoramic** — width=2560+, height=1080 | Prompt: "Generate a WIDE PANORAMIC image (ultrawide, 21:9 or wider)..." |
+
+**Critical rules:**
+- **Vertical scroll images MUST be taller than 1080px** with width exactly fitting the output (1920px or scaled to fit). No side cuts ever — the full width of the image must be visible at all times.
+- **Horizontal scroll images MUST be wider than 1920px** with height exactly fitting 1080px. No top/bottom cuts.
+- **Zoom images use standard 16:9.** The zoom range (1.0→1.3) is gentle enough to avoid pixelation.
+- If the image generator doesn't produce the right aspect ratio, **scale the image** to fit: for vertical scroll, scale width to 1920 (height follows); for horizontal scroll, scale height to 1080 (width follows).
+- Never zoom on code — it becomes unreadable. Use vertical scroll or static.
+- Never horizontal-scroll on portrait content — it makes no sense.
 
 ### Ken Burns zoom (cinematic scenes)
 
-Use `zoompan` to slowly zoom in or out. Alternate direction between scenes for variety.
+Use `zoompan` to slowly zoom in or out.
+
+**IMPORTANT — zoompan jitter bug:** Do NOT use `x` and `y` expressions that depend on `zoom` (e.g., `x='(iw-iw/zoom)/2'`). As zoom changes by tiny increments each frame, the x/y values oscillate between adjacent pixels, causing visible wobble/shaking. Even `trunc()` doesn't fully fix it.
+
+**Use direct formula zoom** — calculates zoom from frame number, not accumulation. Fills entire duration, never freezes, always smooth:
 
 ```bash
-# Slow zoom IN (1.0x → 1.3x) — good for opening/establishing shots
 FRAMES=$((DURATION_SEC * 25))
+
+# Zoom IN (1.0x → 1.15x) over full duration
 ffmpeg -y -loop 1 -i scene.png \
-  -vf "zoompan=z='min(zoom+0.001,1.3)':d=${FRAMES}:s=1920x1080:fps=25" \
+  -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z='1.0+0.15*on/${FRAMES}':d=${FRAMES}:s=1920x1080:fps=25" \
   -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
 
-# Slow zoom OUT (1.3x → 1.0x) — good for reveals, pulling back
+# Zoom OUT (1.15x → 1.0x) over full duration — starts close, slowly reveals
 ffmpeg -y -loop 1 -i scene.png \
-  -vf "zoompan=z='if(eq(on,1),1.3,max(zoom-0.001,1.0))':d=${FRAMES}:s=1920x1080:fps=25" \
+  -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z='1.15-0.15*on/${FRAMES}':d=${FRAMES}:s=1920x1080:fps=25" \
   -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
 ```
 
-Tuning: `0.001` per frame is subtle and cinematic. Use `0.002` for faster zoom. Max zoom `1.3` keeps the image sharp; going past `1.5` looks pixelated.
-
-### Pan (drift across image)
-
-Use `zoompan` with `x` and `y` expressions to drift across a wide or tall image.
+**Shaky center-zoom** — intentionally jittery, adds intensity. Use only for short dramatic moments (2-5 seconds):
 
 ```bash
-# Slow pan LEFT to RIGHT across a wide image (e.g. panorama, wide diagram)
-ffmpeg -y -loop 1 -i wide_scene.png \
-  -vf "zoompan=z=1.2:d=${FRAMES}:x='min(on*2,iw-iw/zoom)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=25" \
-  -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
-
-# Slow pan RIGHT to LEFT
-ffmpeg -y -loop 1 -i wide_scene.png \
-  -vf "zoompan=z=1.2:d=${FRAMES}:x='max(iw-iw/zoom-on*2,0)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=25" \
+ffmpeg -y -loop 1 -i scene.png \
+  -vf "zoompan=z='min(zoom+0.002,1.3)':x='trunc((iw-iw/zoom)/2)':y='trunc((ih-ih/zoom)/2)':d=${FRAMES}:s=1920x1080:fps=25" \
   -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
 ```
+
+### Scene pacing and effect mixing
+
+**Max scene duration: 15-20 seconds per image.** If a narration segment is longer, split it into multiple sub-scenes with different images and alternate effects.
+
+**Alternate effects between consecutive scenes** for visual variety:
+- zoom-in → zoom-out → scroll-h → zoom-in → static → zoom-out → scroll-v → ...
+- Never use the same effect on 3+ consecutive scenes
+- Use zoom-in for opening/establishing shots
+- Use zoom-out for reveals and closing shots
+- Use static (no effect) for text-heavy or quick transition shots
+
+Tuning: `0.15` zoom range is subtle and cinematic. Going past `0.25` looks pixelated on standard images.
+
+### Horizontal scroll (wide content)
+
+For WIDE panoramic images (wider than 1920px). The image height must fit 1080px exactly — no top/bottom cropping.
+
+```bash
+# 1. Scale image so height = 1080, width scales proportionally (will be >1920)
+ffmpeg -y -i wide_image.png -vf "scale=-1:1080" wide_scaled.png
+
+# 2. Get scaled width
+IMG_W=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of csv=p=0 wide_scaled.png)
+
+# 3. Scroll from left to right — crop a 1920x1080 window that moves right
+SCROLL_PX=$(python3 -c "print($IMG_W - 1920)")
+ffmpeg -y -loop 1 -i wide_scaled.png \
+  -vf "crop=1920:1080:'min(t/${DURATION_SEC}*${SCROLL_PX},${SCROLL_PX})':0" \
+  -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
+
+# Clean up
+rm wide_scaled.png
+```
+
+The full height is always visible. Only the horizontal position changes.
+
+For right-to-left scroll, reverse the x expression: `'max(${SCROLL_PX}-t/${DURATION_SEC}*${SCROLL_PX},0)'`
 
 ### Vertical scroll (code / long content)
 
-For images taller than 1080px (e.g. code screenshots, long documents), scroll top-to-bottom.
+For TALL portrait images (taller than 1080px). The image width must fit 1920px exactly — no side cropping.
 
 ```bash
-# Get image height first
-IMG_H=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 tall_image.png)
+# 1. Scale image so width = 1920, height scales proportionally (will be >1080)
+ffmpeg -y -i tall_image.png -vf "scale=1920:-1" tall_scaled.png
 
-# Scroll from top to bottom over DURATION_SEC seconds
-SCROLL_SPEED=$(echo "scale=6; ($IMG_H - 1080) / ($DURATION_SEC * 25)" | bc)
-ffmpeg -y -loop 1 -i tall_image.png \
-  -vf "crop=1920:1080:0:'min(t*${SCROLL_SPEED}*25,${IMG_H}-1080)'" \
+# 2. Get scaled height
+IMG_H=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 tall_scaled.png)
+
+# 3. Scroll from top to bottom — crop a 1920x1080 window that moves down
+SCROLL_PX=$(python3 -c "print($IMG_H - 1080)")
+FRAMES=$((DURATION_SEC * 25))
+ffmpeg -y -loop 1 -i tall_scaled.png \
+  -vf "crop=1920:1080:0:'min(t/${DURATION_SEC}*${SCROLL_PX},${SCROLL_PX})'" \
   -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
+
+# Clean up
+rm tall_scaled.png
 ```
 
-For code, a steady scroll at readable speed works best. If the image is very tall, increase duration or split into multiple clips rather than scrolling too fast.
-
-### Combining zoom + pan
-
-```bash
-# Zoom in while drifting right — dramatic establishing shot
-ffmpeg -y -loop 1 -i scene.png \
-  -vf "zoompan=z='min(zoom+0.001,1.3)':d=${FRAMES}:x='min(on*1.5,iw-iw/zoom)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=25" \
-  -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
-```
+The full width is always visible. Only the vertical position changes. Scroll speed is automatically calculated from image height and duration.
 
 ### Concatenating clips with audio
 

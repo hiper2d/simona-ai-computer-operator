@@ -139,4 +139,5 @@ __pycache__/
 .idea
 .venv
 .DS_Store
-generated-*/
+generated-videos/
+generated-audio
