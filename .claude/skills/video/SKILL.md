@@ -84,13 +84,63 @@ When building a slideshow (Mode B), render each scene as a separate clip with mo
 
 ### Effect selection rules
 
-Choose the effect FIRST, then generate (or request) the image in the correct format.
+Choose the effect based on the **content type**, not just the image format. The effect should match what the viewer needs to see.
 
-| Effect | Use when | Image format | Image generation hint |
+| Effect | Use when | Image format | How to get the image |
 |--------|----------|-------------|----------------------|
-| **Zoom** | Photos, illustrations, UI screenshots, anything visual | Standard 16:9 (1920x1080 or similar) | Default — no special instructions |
-| **Vertical scroll** | Code listings, terminal output, tall diagrams, long documents | **Tall portrait** — width=1080, height=1920+ | Prompt: "Generate a TALL PORTRAIT image (vertical, 9:16 aspect ratio)..." |
-| **Horizontal scroll** | Timelines, wide flowcharts, panoramas, side-by-side comparisons | **Wide panoramic** — width=2560+, height=1080 | Prompt: "Generate a WIDE PANORAMIC image (ultrawide, 21:9 or wider)..." |
+| **Zoom in/out** | Panoramic/cinematic images, backgrounds (space, nature, illustrations), cover art, generated artwork | Standard 16:9 (1920x1080 or similar) | Image generation or standard screenshots |
+| **Vertical scroll (down)** | Website/app UI, chat messages, code listings, articles, any vertically-scrolling content | **Tall portrait** — width=1920, height=2000+ | Full-page browser screenshots (stitch multiple screenshots by scrolling), or tall generated images |
+| **Horizontal scroll (right)** | Timelines, wide diagrams, tables, side-by-side comparisons, panoramic photos | **Wide panoramic** — width=2560+, height=1080 | Wide generated images or stitched horizontal screenshots |
+| **Static** | Text-heavy content, quick transitions, simple UI states | Standard 16:9 | Any screenshot |
+
+**Content-to-effect mapping (common cases):**
+- Cover art, generated illustrations → **zoom in** (opening) or **zoom out** (reveal/closing)
+- App UI showing a chat/feed/list → **scroll down** (reveals content naturally, like the user is reading)
+- App UI showing a form or modal → **static** or **gentle zoom**
+- Code or terminal output → **scroll down** (never zoom — text becomes unreadable)
+- Nature/space/cinematic backgrounds → **zoom in/out**
+- Flowcharts, architecture diagrams → **horizontal scroll** (if wide) or **static**
+
+**Getting tall screenshots for scroll-down:**
+When showing app/website UI with scroll-down effect, you need screenshots taller than 1080px. To capture these:
+1. Use the browser skill to navigate to the page
+2. Take a screenshot at the top
+3. Scroll down and take another screenshot
+4. Stitch them vertically using ffmpeg/ImageMagick: `convert top.png bottom.png -append tall.png`
+5. Or use CDP's `Page.captureScreenshot` with `captureBeyondViewport: true` and `max_size=20*1024*1024` on the websocket for full-page capture (default websocket limit is too small for tall pages)
+
+**Sectioned scroll for long pages (recommended for pages > 3000px tall):**
+
+When a full-page screenshot is very tall (e.g., a chat feed, long article, game log), do NOT scroll the entire page in one continuous clip — it will be too fast and unreadable. Instead:
+
+1. **Capture the full page** as one tall screenshot
+2. **Scale to 1920px width**: `ffmpeg -y -i fullpage.png -vf "scale=1920:-1" fullpage-scaled.png`
+3. **Identify content sections** by extracting horizontal strips at regular intervals (every ~1000px) and viewing them to find where sections change (e.g., introductions → discussion → voting)
+4. **Crop each section** into separate tall images:
+   ```bash
+   ffmpeg -y -i fullpage-scaled.png -vf "crop=1920:SECTION_HEIGHT:0:Y_START" section.png
+   ```
+   Each section should be 1500-3000px tall (enough for slow scroll but not overwhelming)
+5. **Build a scroll clip for each section** — each scrolls slowly through just its portion:
+   ```bash
+   SCROLL_PX=$((SECTION_HEIGHT - 1080))
+   ffmpeg -y -loop 1 -i section.png \
+     -vf "crop=1920:1080:0:'min(t/${DURATION_SEC}*${SCROLL_PX},${SCROLL_PX})'" \
+     -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
+   ```
+6. **Match sections to narration** — each clip shows what the narrator is talking about (e.g., narrator describes voting → show the voting section)
+
+**Target scroll speed**: ~80-120 px/s for readable text. For a 1500px section with 1080 visible, that's ~420px of scroll = ~4-5 seconds. For longer sections (2500px), ~1420px scroll over ~12-15s.
+
+**Freeze-then-scroll**: For UI that benefits from first showing the full context before scrolling (e.g., a form page), hold the top frame static for 2-3 seconds before starting the scroll:
+```bash
+# Hold top for 3s, then scroll for remaining duration
+HOLD_SEC=3
+SCROLL_SEC=$((DURATION_SEC - HOLD_SEC))
+ffmpeg -y -loop 1 -i section.png \
+  -vf "crop=1920:1080:0:'if(lt(t,${HOLD_SEC}),0,min((t-${HOLD_SEC})/${SCROLL_SEC}*${SCROLL_PX},${SCROLL_PX}))'" \
+  -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
+```
 
 **Critical rules:**
 - **Vertical scroll images MUST be taller than 1080px** with width exactly fitting the output (1920px or scaled to fit). No side cuts ever — the full width of the image must be visible at all times.
@@ -99,6 +149,7 @@ Choose the effect FIRST, then generate (or request) the image in the correct for
 - If the image generator doesn't produce the right aspect ratio, **scale the image** to fit: for vertical scroll, scale width to 1920 (height follows); for horizontal scroll, scale height to 1080 (width follows).
 - Never zoom on code — it becomes unreadable. Use vertical scroll or static.
 - Never horizontal-scroll on portrait content — it makes no sense.
+- **Never scroll the entire page in one clip if it's > 3000px tall** — split into sections first.
 
 ### Ken Burns zoom (cinematic scenes)
 
