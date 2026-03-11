@@ -43,3 +43,4 @@ timestamp,service,model,type,description,est_cost_usd
 2026-03-10T01:28:51Z,gemini,gemini-3.1-flash-image,image,ai-werewolf-cover-v17,0.067
 2026-03-10T02:01:45Z,gemini,gemini-3.1-flash-image,image,ai-werewolf-cover-v18,0.067
 2026-03-10T13:57:31Z,gemini,gemini-2.5-flash-tts,voice,werewolf-review-narration,0.02
+2026-03-11T00:14:02Z,gemini,gemini-2.5-flash-tts,voice,werewolf-create-game-narration,0.02

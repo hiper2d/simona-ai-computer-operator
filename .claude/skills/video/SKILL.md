@@ -271,6 +271,47 @@ ffmpeg -y -loop 1 -i code.png \
   -c:v libx264 -tune stillimage -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
 ```
 
+### Animated highlights (self-drawing borders on web pages)
+
+For explaining UI — annotate real DOM elements with pixel-perfect self-drawing SVG borders and a cursor dot. Uses the **highlight skill** (`mcp/highlight/cli.py`).
+
+```bash
+uv run python mcp/highlight/cli.py capture \
+  --url "http://localhost:3000/page" \
+  --config highlights.json \
+  --output /tmp/frames/ \
+  --encode clip.mp4
+```
+
+Config-driven: define a sequence of `highlight`, `scroll`, `click`, `wait`, and `static` actions in a JSON file. See the **highlight skill** for full docs, config format, and action reference.
+
+Output clips are at viewport size (e.g., 1400x900) — use `--scale 1920:1080` to match other video clips. Can be concatenated with zoom/scroll clips.
+
+## Cleanup
+
+**Always clean up temp files after the final video is assembled.** Video production generates a lot of intermediate files:
+
+- `/tmp/clip*.mp4` — individual clip files
+- `/tmp/section-*.png` — cropped screenshot sections
+- `/tmp/*-scaled.png` — scaled images
+- `/tmp/*-fullpage.png` — full-page screenshots
+- `/tmp/concat.txt` — ffmpeg concat lists
+- `/tmp/*-frames/` — highlight capture frame directories (can be 100-300MB each)
+- `/tmp/*.json` — highlight config files
+
+Run cleanup after the final video is saved to `generated-videos/`:
+
+```bash
+# Remove all temp clips, sections, scaled images, concat files
+rm -f /tmp/clip*.mp4 /tmp/section-*.png /tmp/*-scaled.png /tmp/*-fullpage.png /tmp/concat.txt
+# Remove highlight frame dirs (the highlight tool auto-cleans when --encode is used, but manual runs may leave them)
+rm -rf /tmp/*-frames/
+# Remove any temp config files
+rm -f /tmp/*-highlights*.json
+```
+
+The highlight tool (`mcp/highlight/cli.py`) auto-cleans frame PNGs after encoding by default. Pass `--keep-frames` to keep them for debugging.
+
 ## Tips
 
 - Always use `-pix_fmt yuv420p` for maximum compatibility
