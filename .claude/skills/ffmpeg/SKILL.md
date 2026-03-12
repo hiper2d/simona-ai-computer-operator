@@ -1,5 +1,5 @@
 ---
-name: video
+name: ffmpeg
 description: Create videos from images and audio using ffmpeg. Use when the user asks to make a video, combine image with voice, or create video content.
 argument-hint: <instructions for what video to create>
 allowed-tools: Bash, Read, Glob

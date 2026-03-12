@@ -1,5 +1,5 @@
 ---
-name: voice
+name: gemini-voice
 description: Generate speech audio using Google's Gemini TTS API. Use when the user asks to generate voice, narration, or spoken audio.
 argument-hint: <text to speak> [--voice NAME] [--style STYLE]
 allowed-tools: Bash, Read

@@ -44,3 +44,8 @@ timestamp,service,model,type,description,est_cost_usd
 2026-03-10T02:01:45Z,gemini,gemini-3.1-flash-image,image,ai-werewolf-cover-v18,0.067
 2026-03-10T13:57:31Z,gemini,gemini-2.5-flash-tts,voice,werewolf-review-narration,0.02
 2026-03-11T00:14:02Z,gemini,gemini-2.5-flash-tts,voice,werewolf-create-game-narration,0.02
+2026-03-11T21:10:01Z,google-veo,veo-3.1-generate-preview,video,werewolf-veo-text,3.20
+2026-03-11T21:10:01Z,google-veo,veo-3.1-generate-preview,video,werewolf-veo-image,3.20
+2026-03-12T01:13:21Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-intro-hook,0.30
+2026-03-12T01:36:34Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-intro-full,0.30
+2026-03-12T01:43:23Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-intro-v2,0.30

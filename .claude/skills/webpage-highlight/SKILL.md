@@ -1,5 +1,5 @@
 ---
-name: highlight
+name: webpage-highlight
 description: Capture animated UI highlights on web pages — self-drawing SVG borders around DOM elements with a cursor dot. Use when creating video clips that explain web app interfaces, walk through forms, or demonstrate UI flows.
 argument-hint: <config-path or instructions for what to highlight>
 allowed-tools: Bash(uv run python mcp/highlight/cli.py *), Read, Write, Glob

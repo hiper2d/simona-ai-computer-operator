@@ -14,6 +14,12 @@
 - Highlight tool (`mcp/highlight/cli.py`): config-driven animated SVG borders on DOM elements via CDP. Frame-by-frame capture with paused Web Animations API. Reusable across any web page.
 - CDP full-page screenshots: use `max_size=20*1024*1024` on websocket (default too small for tall pages)
 - `find_code_segments` had a bug: called `get_youtube_transcript()` with default `format="text"` then did `json.loads()` — fixed to use `format="segments"`
+- Veo 3.1 API: use `bytesBase64Encoded` for images (NOT `inlineData`/`fileData`). `durationSeconds` must be a number, only 4/6/8 accepted. Costs $0.40/s ($3.20 per 8s clip at 720p)
+- ElevenLabs default voice: Sarah (`EXAVITQu4vr4xnSDxMaL`), stability=0.35, style=0.6 for engaging delivery
+- Video concat audio sync: all clips must use `-ar 48000 -ac 2 -c:a aac -b:a 192k`. Mismatched sample rates cause audio drift
+- xfade requires matching fps between clips. Veo outputs 24fps, our standard is 25fps — convert with `fps=25` filter
+- Single narration over visual transitions: build combined visual track first (xfade), then lay audio on top. Avoids voice cuts at scene boundaries
+- Keep reusable intermediates in `/tmp/video-assets/` during iteration, clean up with `/cleanup` skill when done
 
 ## Session Log
 
@@ -21,3 +27,4 @@
 - 2026-03-04: Converted MCP servers to skill-based CLI tools. Created supernova explainer video. Tested YouTube Studio upload via browser automation. Moved memory to project-local `.claude/memory/`.
 - 2026-03-07: Removed custom worker loop (replaced by Claude Code's built-in loop). Cleaned up memory and CLAUDE.md.
 - 2026-03-10: Built highlight capture tool (`mcp/highlight/`). Config-driven animated SVG borders on web pages. Updated video skill with sectioned scroll and highlight integration. Werewolf game review video v3.
+- 2026-03-11: Added Veo 3.1 skill, ElevenLabs TTS skill. Created director skill (orchestrates all video production) and cleanup skill. Produced werewolf review v8 with Veo intro + crossfade + highlight walkthrough. Alex chose Sarah as ElevenLabs voice.

@@ -1,5 +1,5 @@
 ---
-name: image
+name: nanobanana
 description: Generate images using Google's Nano Banana 2 (Gemini) API. Use when the user asks to create, generate, or draw an image.
 argument-hint: <prompt describing the image>
 allowed-tools: Bash, Read, Glob

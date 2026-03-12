@@ -10,12 +10,24 @@ The goal: an AI that can run media channels, create software projects, produce v
 
 ## Capabilities
 
-### Content Creation
+### Video Production
 | Skill | Command | What it does |
 |-------|---------|--------------|
-| **image** | `/image <prompt>` | Generate images using Gemini 3.1 Flash |
-| **voice** | `/voice <text>` | Generate speech with Gemini TTS (Kore voice by default) |
-| **video** | `/video <instructions>` | Combine images + audio into videos with ffmpeg (Ken Burns zoom, pan, scroll effects) |
+| **director** | `/director <brief>` | Plan and produce videos end-to-end — scene planning, narration, effects, assembly |
+| **ffmpeg** | `/ffmpeg <instructions>` | Build video scenes with ffmpeg (Ken Burns zoom, pan, scroll, crossfade, concat) |
+| **veo** | `/veo <prompt or image>` | Generate AI-animated video clips using Google Veo 3.1 |
+| **webpage-highlight** | `/webpage-highlight <config>` | Capture animated UI highlights — self-drawing SVG borders on DOM elements |
+
+### Voice & Audio
+| Skill | Command | What it does |
+|-------|---------|--------------|
+| **elevenlabs** | `/elevenlabs <text>` | Natural-sounding speech via ElevenLabs (Sarah voice, polished output) |
+| **gemini-voice** | `/gemini-voice <text>` | Speech via Google Gemini TTS (cheap, fast, good for drafts) |
+
+### Image Generation
+| Skill | Command | What it does |
+|-------|---------|--------------|
+| **nanobanana** | `/nanobanana <prompt>` | Generate images using Google Gemini (Nano Banana 2) |
 
 ### Research & Browsing
 | Skill | Command | What it does |
@@ -23,25 +35,21 @@ The goal: an AI that can run media channels, create software projects, produce v
 | **browser** | `/browser [url]` | Browse the web, read pages, click, fill forms via Chrome DevTools Protocol |
 | **youtube** | `/youtube <url>` | Analyze YouTube videos — extract transcripts, code, and content |
 
-### Autonomous Worker
+### Utilities
 | Skill | Command | What it does |
 |-------|---------|--------------|
-| **worker** | `/worker start` | Start the worker in continuous loop mode |
-| | `/worker run` | Run one full task to completion, then exit |
-| | `/worker stop` | Stop the worker (finishes current step first) |
-| | `/worker pause` / `resume` | Pause or resume the worker |
-| | `/worker status` | Show worker state, current task, recent log entries |
-| | `/worker task "idea"` | Create a new task file with auto-generated steps |
-| | `/worker list` | List all tasks with status and progress |
+| **cleanup** | `/cleanup` | Scan and remove temp files from video production and other skills |
+| **werewolf** | `/werewolf` | Work with the AI Werewolf Party Game project |
 
 ### Pipeline Example
 
-Skills chain together naturally. For example, "make a 1-minute video explaining this YouTube video" triggers:
+Skills chain together naturally. The **director** orchestrates the crew. For example, "make a 1-minute video explaining this YouTube video" triggers:
 
 1. `/youtube` — fetch transcript, understand the content
-2. `/image` — generate scene images from the script
-3. `/voice` — narrate the script
-4. `/video` — stitch images + audio with Ken Burns effects into a final MP4
+2. `/nanobanana` — generate scene images from the script
+3. `/elevenlabs` — narrate the script with natural voice
+4. `/veo` — animate a hero shot for the intro
+5. `/ffmpeg` — build scenes with zoom/scroll effects, crossfade transitions, concat into final MP4
 
 All from a single natural language instruction.
 
@@ -56,24 +64,13 @@ The engine is **Claude Code** (Anthropic's CLI agent), extended with:
 
 ```
 .claude/
-├── skills/          # Skill definitions (youtube, browser, image, voice, video, worker)
+├── skills/          # Skill definitions (director, ffmpeg, veo, elevenlabs, etc.)
 └── memory/          # Persistent memory, updated each session
 
 mcp/
 ├── youtube/         # tools.py + cli.py — transcript, code detection, frames
-└── browser/         # tools.py + cli.py + cdp_client.py — Chrome automation
-
-worker/
-├── loop.sh          # Main worker loop — runs claude --print per step
-├── start.sh         # Start worker in background
-├── stop.sh          # Graceful stop
-├── control.json     # Runtime commands (run/pause/stop)
-├── log.jsonl        # Structured execution log
-└── worker-output.log  # Full Claude output for debugging
-
-tasks/
-├── NNN-slug.md      # Task files with steps and frontmatter
-└── ideas.md         # Backlog — worker auto-converts when out of tasks
+├── browser/         # tools.py + cli.py + cdp_client.py — Chrome automation
+└── highlight/       # cli.py — animated SVG border capture via CDP
 ```
 
 Skills invoke CLI tools like `uv run python mcp/browser/cli.py navigate "https://..."` — no MCP servers, no extra processes, no token overhead from idle tool definitions.
@@ -87,8 +84,9 @@ uv sync
 # Start Chrome with debug port for browser automation
 bash mcp/browser/start-chrome.sh
 
-# Add your Google API key to .env (used for image gen and TTS)
-echo "GOOGLE_K=your-key-here" > .env
+# Add API keys to .env
+echo "GOOGLE_K=your-google-api-key" > .env
+echo "EL_K=your-elevenlabs-api-key" >> .env
 ```
 
 ## What's Next
