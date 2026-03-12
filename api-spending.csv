@@ -49,3 +49,11 @@ timestamp,service,model,type,description,est_cost_usd
 2026-03-12T01:13:21Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-intro-hook,0.30
 2026-03-12T01:36:34Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-intro-full,0.30
 2026-03-12T01:43:23Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-intro-v2,0.30
+2026-03-12T13:05:59Z,gemini,gemini-3.1-flash-image,image,ai-werewolf-card-draw,0.067
+2026-03-12T13:10:21Z,gemini,gemini-3.1-flash-image,image,ai-werewolf-card-draw-v2,0.067
+2026-03-12T13:13:51Z,gemini,gemini-3.1-flash-image,image,ai-werewolf-card-draw-v3,0.067
+2026-03-12T13:19:20Z,gemini,gemini-3.1-flash-image,image,ai-werewolf-card-draw-v4,0.067
+2026-03-12T13:23:18Z,gemini,gemini-3.1-flash-image,image,ai-werewolf-card-draw-v5,0.067
+2026-03-12T13:23:18Z,gemini,gemini-3.1-flash-image,image,ai-werewolf-card-draw-v6,0.067
+2026-03-12T13:23:18Z,gemini,gemini-3.1-flash-image,image,ai-werewolf-card-draw-v7,0.067
+2026-03-12T13:23:18Z,gemini,gemini-3.1-flash-image,image,ai-werewolf-card-draw-v8,0.067

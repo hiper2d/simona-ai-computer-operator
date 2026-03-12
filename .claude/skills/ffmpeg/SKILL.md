@@ -155,21 +155,33 @@ ffmpeg -y -loop 1 -i section.png \
 
 Use `zoompan` to slowly zoom in or out.
 
-**IMPORTANT — zoompan jitter bug:** Do NOT use `x` and `y` expressions that depend on `zoom` (e.g., `x='(iw-iw/zoom)/2'`). As zoom changes by tiny increments each frame, the x/y values oscillate between adjacent pixels, causing visible wobble/shaking. Even `trunc()` doesn't fully fix it.
+**IMPORTANT — zoompan jitter bug:** When using `x` and `y` expressions for centered zoom, the values oscillate between adjacent pixels, causing visible wobble. Even `trunc()` doesn't fix it at 1080p.
 
-**Use direct formula zoom** — calculates zoom from frame number, not accumulation. Fills entire duration, never freezes, always smooth:
+**Fix: run zoompan at 4K internally, downscale to 1080p.** The 1-pixel jitter at 3840x2160 becomes a sub-pixel shift after downscaling — invisible.
+
+**Centered zoom IN** (1.0x → 1.15x) — smooth, no jitter:
 
 ```bash
 FRAMES=$((DURATION_SEC * 25))
 
-# Zoom IN (1.0x → 1.15x) over full duration
+ffmpeg -y -loop 1 -i scene.png \
+  -vf "scale=3840:2160:force_original_aspect_ratio=decrease,pad=3840:2160:(ow-iw)/2:(oh-ih)/2,zoompan=z='1.0+0.15*on/${FRAMES}':x='iw/2-(iw/(1.0+0.15*on/${FRAMES})/2)':y='ih/2-(ih/(1.0+0.15*on/${FRAMES})/2)':d=${FRAMES}:s=3840x2160:fps=25,scale=1920:1080" \
+  -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
+```
+
+**Centered zoom OUT** (1.15x → 1.0x) — starts close, slowly reveals:
+
+```bash
+ffmpeg -y -loop 1 -i scene.png \
+  -vf "scale=3840:2160:force_original_aspect_ratio=decrease,pad=3840:2160:(ow-iw)/2:(oh-ih)/2,zoompan=z='1.15-0.15*on/${FRAMES}':x='iw/2-(iw/(1.15-0.15*on/${FRAMES})/2)':y='ih/2-(ih/(1.15-0.15*on/${FRAMES})/2)':d=${FRAMES}:s=3840x2160:fps=25,scale=1920:1080" \
+  -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
+```
+
+**Top-left zoom IN** (no x/y needed, no jitter) — simpler, use when center doesn't matter:
+
+```bash
 ffmpeg -y -loop 1 -i scene.png \
   -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z='1.0+0.15*on/${FRAMES}':d=${FRAMES}:s=1920x1080:fps=25" \
-  -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
-
-# Zoom OUT (1.15x → 1.0x) over full duration — starts close, slowly reveals
-ffmpeg -y -loop 1 -i scene.png \
-  -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z='1.15-0.15*on/${FRAMES}':d=${FRAMES}:s=1920x1080:fps=25" \
   -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
 ```
 
