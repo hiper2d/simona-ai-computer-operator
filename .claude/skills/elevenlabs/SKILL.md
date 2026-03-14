@@ -114,8 +114,10 @@ Note: cost is approximate — ElevenLabs charges per character (~$0.30/1000 char
 
 ## When to use ElevenLabs vs Google TTS
 
-- **ElevenLabs**: Final video narration, polished content, anything going on YouTube. More natural, more expensive (~$1/min).
-- **Google TTS**: Quick drafts, testing narration timing, prototyping. Cheaper (~$0.02/generation), faster, but sounds more robotic.
+**IMPORTANT: Use Gemini/Google voice for ALL prototyping and iteration. Only use ElevenLabs for final polished cuts that Alex has approved.** ElevenLabs costs add up fast (~$0.30/clip, 13 clips = ~$3.90 wasted on a draft).
+
+- **ElevenLabs**: Final video narration only, after Alex confirms the cut is ready. More natural, expensive (~$1/min).
+- **Google/Gemini TTS**: All drafts, prototyping, testing narration timing, iterating on scripts. Nearly free.
 
 ## Troubleshooting
 

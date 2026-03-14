@@ -21,6 +21,9 @@
 - Single narration over visual transitions: build combined visual track first (xfade), then lay audio on top. Avoids voice cuts at scene boundaries
 - Keep reusable intermediates in `/tmp/video-assets/` during iteration, clean up with `/cleanup` skill when done
 
+## Feedback
+- Always ask Alex which AI video model to use before generating — don't auto-pick
+
 ## Session Log
 
 - 2026-03-02: First session. Personality setup (SOUL.md), CLAUDE.md, memory. Analyzed Wes Roth video. Fixed YouTube transcript tool.
@@ -29,3 +32,4 @@
 - 2026-03-10: Built highlight capture tool (`mcp/highlight/`). Config-driven animated SVG borders on web pages. Updated video skill with sectioned scroll and highlight integration. Werewolf game review video v3.
 - 2026-03-11: Added Veo 3.1 skill, ElevenLabs TTS skill. Created director skill (orchestrates all video production) and cleanup skill. Produced werewolf review v8 with Veo intro + crossfade + highlight walkthrough. Alex chose Sarah as ElevenLabs voice.
 - 2026-03-12: Fixed zoompan center-zoom jitter (4K internal res trick). Renamed skills: image→nanobanana, video→ffmpeg, voice→gemini-voice, highlight→webpage-highlight. Updated README. Produced v11 with 4-image slideshow intro (crossfades) + Veo clips.
+- 2026-03-14: Added `type` and `select` actions to highlight tool (React-aware typing + dropdown changes). Fixed 3 highlight bugs: sticky nav offset, generic selectors after scroll, viewport reset wiping React state. Produced werewolf game creation walkthrough video (13 scenes, 70s). Updated ElevenLabs skill: Gemini for drafts, ElevenLabs only for final cuts.

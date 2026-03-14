@@ -36,7 +36,7 @@ Before touching any tools, plan the entire video:
 Generate assets using the crew skills. Parallelize where possible:
 - **Narration**: Use `/elevenlabs` for polished output, `/gemini-voice` for drafts
 - **Images**: Use `/nanobanana` for generated art, `/browser` for screenshots
-- **AI video clips**: Use `/veo` for hero animation shots
+- **AI video clips**: **Always ask Alex which model to use.** Options: `/ltx-video` (drafts, cheapest), `/seedance` or `/kling` (final quality, comparable), `/veo` (text-to-video only)
 - **UI highlights**: Use `/webpage-highlight` for web app walkthroughs
 
 Save reusable intermediates to `/tmp/video-assets/`:
@@ -138,7 +138,7 @@ Choose effects based on content type. Refer to the **ffmpeg skill** for detailed
 | Content | Effect | Notes |
 |---------|--------|-------|
 | Cover art, hero image | Zoom in (opening) or zoom out (reveal) | Ken Burns, 1.0→1.15x |
-| AI-animated hero shot | Veo | Use for 1-2 key moments only ($3.20/clip) |
+| AI-animated hero shot | Kling Pro (/kling) | Default for AI video. $0.70/5s at 1080p |
 | Web app UI (tall page) | Scroll down (sectioned) | Split pages >3000px into sections |
 | Web app UI (form/modal) | Static or gentle zoom | |
 | Code / terminal | Scroll down | Never zoom on code |
@@ -174,14 +174,23 @@ Choose effects based on content type. Refer to the **ffmpeg skill** for detailed
 
 | Asset | Cost | Notes |
 |-------|------|-------|
-| Veo clip (8s, 720p) | ~$3.20 | Use sparingly — 1-2 per video |
+| LTX Pro clip (6s, 1080p) | ~$0.36 | **Drafts/prototyping** — cheap & fast |
+| Seedance 1.5 Pro clip (5s, 1080p) | ~$0.58 | **Final quality** — comparable to Kling |
+| Kling Pro clip (5s, 1080p) | ~$0.70 | **Final quality** — comparable to Seedance |
+| Veo clip (8s, 720p) | ~$3.20 | Only for text-to-video (no input image) |
 | ElevenLabs narration | ~$0.30/generation | Per API call |
 | Google TTS | ~$0.02/generation | Use for drafts |
 | Gemini image | ~$0.07 | Cheap, use freely |
 | ffmpeg effects | Free | Zoom, scroll, static, concat |
 | Highlight capture | Free | Frame-by-frame screenshots |
 
-**Budget strategy**: Most scenes should use free ffmpeg effects. Reserve Veo for hero shots. Use ElevenLabs for final narration only.
+**Budget strategy**: Most scenes should use free ffmpeg effects. Use LTX Pro ($0.36/6s) for drafts. For final quality, ask Alex to choose between Seedance ($0.58/5s) and Kling ($0.70/5s). Use ElevenLabs for final narration only.
+
+## Scene planning rules
+
+- **One context per clip**: Each clip should show one screen/view. Don't navigate to a new page at the end of a clip — let the crossfade transition handle it.
+- **No trailing navigation**: If scene 1 is the lobby and scene 2 is the form, don't click "Create Game" at the end of scene 1. Just highlight it. The next scene starts on the form directly.
+- **Audio-first timing**: Generate narration audio first, then time video clips to match the audio duration. Pad short clips by looping.
 
 ## Output
 

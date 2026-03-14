@@ -70,6 +70,8 @@ uv run python mcp/highlight/cli.py capture \
 | `clear` | — | Remove all highlights. **Must clear before scrolling** (highlights are position:fixed and would float). |
 | `scroll` | `to` (px, "top", "bottom", or "selector:CSS"), `duration` (seconds) | Smooth scroll with ease-in-out. Auto-clears highlights. |
 | `click` | `selector` | Click an element |
+| `type` | `selector`, `text`, `speed` (chars/sec, default 12), `hold` (seconds, default 0.5), `focus` (default true) | Type text character by character into an input/textarea. Handles React controlled components via `__reactProps`. |
+| `select` | `selector`, `value` or `index`, `hold` (seconds, default 0.3) | Change a `<select>` dropdown value. React-aware via `__reactProps.onChange`. |
 | `wait` | `condition` ("text:..." or "selector:..."), `timeout` (seconds, default 60) | Wait for content to appear. Use after clicking buttons that trigger async operations. |
 | `js` | `expression` | Execute arbitrary JavaScript |
 
@@ -95,3 +97,10 @@ Standard CSS selectors plus:
 - **Re-inject after clear**: the tool auto-reinjects when the next highlight action runs
 - **Combine with video skill**: highlight clips can be concatenated with zoom/scroll clips using ffmpeg
 - **Frame count**: ~100ms per frame capture, a 20s clip (500 frames) takes ~50s to capture
+
+## Gotchas
+
+- **Sticky nav bars**: The scroll-to-selector action auto-detects sticky/fixed headers and offsets below them. No manual offset needed.
+- **Specific selectors after scroll**: After scrolling, generic selectors like `select`, `textarea`, `div` will match the FIRST element on the page (often at the top, off-screen). Always use specific selectors after scrolling. If needed, tag elements with IDs via a `js` action first, then highlight by `#id`.
+- **React state preservation**: The tool skips `setDeviceMetricsOverride` if the viewport already matches the config. This prevents React apps from re-rendering and losing component state (e.g., generated previews). **Make sure the browser viewport is already set to the config size** before capturing pages with important React state.
+- **React form inputs**: Use the `type` and `select` actions for React controlled components — they handle `__reactProps.onChange` automatically.

@@ -39,6 +39,17 @@ Sequence actions:
                   to: pixel value, "bottom", "top", or "selector:CSS_SELECTOR"
                   duration: scroll time in seconds
     click       — Click an element (selector supports :has-text)
+    type        — Type text character by character into an input/textarea
+                  selector: CSS selector for the input element
+                  text: the text to type
+                  speed: characters per second (default 12)
+                  hold: seconds to hold after typing (default 0.5)
+                  focus: whether to focus element first (default true)
+    select      — Change a <select> dropdown value (React-aware)
+                  selector: CSS selector for the <select>
+                  value: option value to select, OR
+                  index: option index to select
+                  hold: seconds to hold after (default 0.3)
     wait        — Wait for a condition before continuing
                   condition: "text:SOME TEXT" (wait for text to appear on page)
                              "selector:CSS_SELECTOR" (wait for element to exist)
@@ -278,7 +289,16 @@ class HighlightCapture:
                 (() => {{
                     const el = window.__findElement ? window.__findElement("{sel}") : document.querySelector("{sel}");
                     if (!el) return {current_y};
-                    return el.getBoundingClientRect().top + window.scrollY - 30;
+                    // Detect sticky/fixed headers to offset scroll target below them
+                    let headerH = 0;
+                    for (const c of document.querySelectorAll('header, nav, [class*="navbar"], [class*="header"]')) {{
+                        const s = getComputedStyle(c);
+                        if (s.position === 'sticky' || s.position === 'fixed') {{
+                            headerH = Math.max(headerH, c.getBoundingClientRect().height);
+                        }}
+                    }}
+                    const offset = Math.max(headerH + 10, 30);
+                    return el.getBoundingClientRect().top + window.scrollY - offset;
                 }})()
             """)
             if to_y is None:
@@ -291,9 +311,12 @@ class HighlightCapture:
             await self.js("window.__clearHighlights()")
             self._hl_injected = False
 
+        # Force instant scroll behavior (overrides CSS scroll-behavior: smooth)
+        await self.js("document.documentElement.style.scrollBehavior = 'auto'")
+
         total_frames = int(duration * self.fps)
         for i in range(total_frames):
-            progress = i / total_frames
+            progress = (i + 1) / total_frames  # +1 so we reach 1.0 on last frame
             # ease-in-out
             if progress < 0.5:
                 ease = 2 * progress * progress
@@ -302,6 +325,9 @@ class HighlightCapture:
             y = int(current_y + ease * (to_y - current_y))
             await self.js(f"window.scrollTo(0, {y})")
             await self.screenshot()
+
+        # Ensure we're exactly at the target position
+        await self.js(f"window.scrollTo(0, {int(to_y)})")
 
         print(f"  scroll {current_y} -> {to_y}: {total_frames} frames ({duration}s)")
 
@@ -342,6 +368,124 @@ class HighlightCapture:
 
         print(f"  wait '{condition}': TIMEOUT after {timeout}s")
 
+    async def do_type(self, step):
+        """Type text character by character into an input/textarea, capturing each frame.
+
+        Handles React controlled components via __reactProps.onChange.
+        Params:
+            selector: CSS selector (supports :has-text)
+            text: text to type
+            speed: characters per second (default 12)
+            hold: seconds to hold after typing completes (default 0.5)
+            focus: whether to focus the element first (default True)
+        """
+        selector = step["selector"]
+        text = step["text"]
+        speed = step.get("speed", 12)
+        hold = step.get("hold", 0.5)
+        do_focus = step.get("focus", True)
+
+        frames_per_char = max(1, int(self.fps / speed))
+        escaped_sel = selector.replace('"', '\\"')
+
+        # Focus the element first
+        if do_focus:
+            await self.js(f"""
+                (() => {{
+                    const findEl = window.__findElement || function(s) {{ return document.querySelector(s); }};
+                    const el = findEl("{escaped_sel}");
+                    if (el) el.focus();
+                }})()
+            """)
+            # Capture a couple frames with cursor visible
+            await self.screenshot()
+            await self.screenshot()
+
+        for i in range(len(text)):
+            current_text = text[:i + 1]
+            escaped_text = current_text.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "")
+
+            await self.js(f"""
+                (() => {{
+                    const findEl = window.__findElement || function(s) {{ return document.querySelector(s); }};
+                    const el = findEl("{escaped_sel}");
+                    if (!el) return 'not found';
+                    const propsKey = Object.keys(el).find(k => k.startsWith('__reactProps'));
+                    if (propsKey && el[propsKey].onChange) {{
+                        el[propsKey].onChange({{target: {{value: '{escaped_text}'}}}});
+                    }} else {{
+                        const nativeSetter = Object.getOwnPropertyDescriptor(
+                            window.HTMLInputElement.prototype, 'value'
+                        )?.set || Object.getOwnPropertyDescriptor(
+                            window.HTMLTextAreaElement.prototype, 'value'
+                        )?.set;
+                        if (nativeSetter) nativeSetter.call(el, '{escaped_text}');
+                        else el.value = '{escaped_text}';
+                        el.dispatchEvent(new Event('input', {{bubbles: true}}));
+                        el.dispatchEvent(new Event('change', {{bubbles: true}}));
+                    }}
+                    return 'ok';
+                }})()
+            """)
+
+            for _ in range(frames_per_char):
+                await self.screenshot()
+
+        # Hold after typing
+        hold_frames = int(hold * self.fps)
+        for _ in range(hold_frames):
+            await self.screenshot()
+
+        total_frames = len(text) * frames_per_char + hold_frames + (2 if do_focus else 0)
+        print(f"  type '{selector}': '{text}' ({len(text)} chars, {total_frames} frames, {total_frames / self.fps:.1f}s)")
+
+    async def do_select(self, step):
+        """Change a <select> dropdown value, handling React controlled components.
+
+        Params:
+            selector: CSS selector for the <select> element
+            value: the option value to select (exact match)
+            index: alternatively, the option index to select
+            hold: seconds to hold after selection (default 0.3)
+        """
+        selector = step["selector"]
+        value = step.get("value")
+        index = step.get("index")
+        hold = step.get("hold", 0.3)
+        escaped_sel = selector.replace('"', '\\"')
+
+        if value is not None:
+            escaped_val = str(value).replace("'", "\\'")
+            js_val = f"'{escaped_val}'"
+        elif index is not None:
+            js_val = f"sel.options[{index}].value"
+        else:
+            print("  WARNING: select needs 'value' or 'index'")
+            return
+
+        await self.js(f"""
+            (() => {{
+                const findEl = window.__findElement || function(s) {{ return document.querySelector(s); }};
+                const sel = findEl("{escaped_sel}");
+                if (!sel) return 'not found';
+                const newVal = {js_val};
+                const propsKey = Object.keys(sel).find(k => k.startsWith('__reactProps'));
+                if (propsKey && sel[propsKey].onChange) {{
+                    sel[propsKey].onChange({{target: {{value: newVal}}}});
+                }} else {{
+                    sel.value = newVal;
+                    sel.dispatchEvent(new Event('change', {{bubbles: true}}));
+                }}
+                return 'selected: ' + newVal;
+            }})()
+        """)
+
+        hold_frames = int(hold * self.fps)
+        for _ in range(hold_frames):
+            await self.screenshot()
+
+        print(f"  select '{selector}': {hold_frames} frames ({hold}s)")
+
     async def do_js(self, step):
         expr = step["expression"]
         result = await self.js(expr)
@@ -378,13 +522,28 @@ class HighlightCapture:
         ) as ws:
             self.ws = ws
 
-            # Set viewport
-            await self.send("Emulation.setDeviceMetricsOverride", {
-                "width": self.viewport["width"],
-                "height": self.viewport["height"],
-                "deviceScaleFactor": 1,
-                "mobile": False,
-            })
+            # Set viewport — only if not already matching (avoids React re-render)
+            current_vp = await self.js(
+                "JSON.stringify({w: window.innerWidth, h: window.innerHeight})"
+            )
+            needs_viewport = True
+            if current_vp and isinstance(current_vp, str):
+                import json as _json
+                try:
+                    vp = _json.loads(current_vp)
+                    if vp["w"] == self.viewport["width"] and vp["h"] == self.viewport["height"]:
+                        needs_viewport = False
+                except Exception:
+                    pass
+
+            if needs_viewport:
+                await self.send("Emulation.setDeviceMetricsOverride", {
+                    "width": self.viewport["width"],
+                    "height": self.viewport["height"],
+                    "deviceScaleFactor": 1,
+                    "mobile": False,
+                })
+                await asyncio.sleep(0.5)
 
             # Navigate if needed
             if url not in tab.get("url", ""):

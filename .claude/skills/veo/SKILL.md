@@ -11,6 +11,8 @@ Generate video: $ARGUMENTS
 
 Uses the Google Veo 3.1 API (`predictLongRunning`) to generate short video clips. Supports text-to-video and image-to-video (animate a static image). Returns an MP4 file.
 
+**NOTE**: For image-to-video, prefer `/kling` or `/seedance` instead — they're much cheaper ($0.58-$0.70 vs $3.20) at 1080p with comparable quality. Use Veo only for text-to-video (no input image).
+
 ## Modes
 
 ### Mode A: Text-to-Video
