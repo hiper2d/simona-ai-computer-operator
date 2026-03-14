@@ -62,3 +62,11 @@ timestamp,service,model,type,description,est_cost_usd
 2026-03-14T13:03:00Z,ltx-video,ltx-2-3-pro,video,simona-2-ltx23-pro-headphones,0.36
 2026-03-14T13:22:00Z,fal-ai,wan-v2.6-i2v,video,simona-2-wan26-serious,0.75
 2026-03-14T13:52:00Z,fal-ai,seedance-v1.5-pro-i2v,video,simona-2-seedance15-pro,0.58
+2026-03-14T21:15:10Z,gemini,gemini-3.1-flash-image,image,simona-streamer-studio,0.067
+2026-03-14T21:38:11Z,gemini,gemini-3.1-flash-image,image,simona-beach,0.067
+2026-03-14T21:42:36Z,gemini,gemini-3.1-flash-image,image,simona-beach-v2,0.067
+2026-03-14T21:43:29Z,gemini,gemini-3.1-flash-image,image,simona-beach-v3,0.067
+2026-03-14T21:56:43Z,gemini,gemini-3.1-flash-image,image,simona-beach-v4,0.067
+2026-03-14T22:01:23Z,gemini,gemini-3.1-flash-image,image,simona-beach-laptop,0.067
+2026-03-14T22:03:22Z,gemini,gemini-3.1-flash-image,image,simona-beach-laptop-v2,0.067
+2026-03-14T22:11:53Z,gemini,gemini-3.1-flash-image,image,simona-beach-laptop-v3,0.067
