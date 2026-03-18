@@ -70,3 +70,13 @@ timestamp,service,model,type,description,est_cost_usd
 2026-03-14T22:01:23Z,gemini,gemini-3.1-flash-image,image,simona-beach-laptop,0.067
 2026-03-14T22:03:22Z,gemini,gemini-3.1-flash-image,image,simona-beach-laptop-v2,0.067
 2026-03-14T22:11:53Z,gemini,gemini-3.1-flash-image,image,simona-beach-laptop-v3,0.067
+2026-03-15T16:08:26Z,fal-ai,seedance-v1.5-pro-i2v,video,simona-intro-10s,1.16
+2026-03-15T16:08:26Z,fal-ai,seedance-v1.5-pro-i2v,video,simona-transition-8s,0.93
+2026-03-15T16:08:26Z,fal-ai,seedance-v1.5-pro-i2v,video,simona-outro-8s,0.93
+2026-03-15T16:31:26Z,gemini,gemini-2.5-flash-tts,voice,werewolf-slideshow-narration,0.02
+2026-03-15T16:53:21Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-slideshow-narr,0.30
+2026-03-15T16:53:21Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-models-extended-narr,0.30
+2026-03-17T12:48:39Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-app-showcase-12clips,3.60
+2026-03-17T14:48:58Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-narr03-lotr,0.30
+2026-03-18T15:17:08Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-lily-12clips,3.60
+2026-03-18T15:52:15Z,elevenlabs,eleven_turbo_v2_5,voice,werewolf-slideshow-lily,0.30

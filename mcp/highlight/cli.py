@@ -275,6 +275,7 @@ class HighlightCapture:
     async def do_scroll(self, step):
         target = step["to"]
         duration = step.get("duration", 1.5)
+        center = step.get("center", False)
 
         current_y = await self.js("window.scrollY") or 0
 
@@ -289,7 +290,7 @@ class HighlightCapture:
                 (() => {{
                     const el = window.__findElement ? window.__findElement("{sel}") : document.querySelector("{sel}");
                     if (!el) return {current_y};
-                    // Detect sticky/fixed headers to offset scroll target below them
+                    // Detect sticky/fixed headers
                     let headerH = 0;
                     for (const c of document.querySelectorAll('header, nav, [class*="navbar"], [class*="header"]')) {{
                         const s = getComputedStyle(c);
@@ -297,8 +298,16 @@ class HighlightCapture:
                             headerH = Math.max(headerH, c.getBoundingClientRect().height);
                         }}
                     }}
-                    const offset = Math.max(headerH + 10, 30);
-                    return el.getBoundingClientRect().top + window.scrollY - offset;
+                    const rect = el.getBoundingClientRect();
+                    const elPageTop = rect.top + window.scrollY;
+                    if ({'true' if center else 'false'}) {{
+                        // Center element in usable viewport (below header)
+                        const usableH = window.innerHeight - headerH;
+                        return Math.max(0, elPageTop - headerH - (usableH - rect.height) / 2);
+                    }} else {{
+                        const offset = Math.max(headerH + 10, 30);
+                        return elPageTop - offset;
+                    }}
                 }})()
             """)
             if to_y is None:
@@ -551,6 +560,12 @@ class HighlightCapture:
                 await asyncio.sleep(2)
 
             await asyncio.sleep(0.3)
+
+            # Clean up any stale highlights from previous captures
+            await self.js(
+                "(() => { const ol = document.getElementById('hl-overlay');"
+                " if (ol) ol.remove(); return 'cleaned'; })()"
+            )
 
             # Execute sequence
             sequence = self.config.get("sequence", [])

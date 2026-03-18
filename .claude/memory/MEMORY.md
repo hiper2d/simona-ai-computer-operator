@@ -15,7 +15,7 @@
 - CDP full-page screenshots: use `max_size=20*1024*1024` on websocket (default too small for tall pages)
 - `find_code_segments` had a bug: called `get_youtube_transcript()` with default `format="text"` then did `json.loads()` — fixed to use `format="segments"`
 - Veo 3.1 API: use `bytesBase64Encoded` for images (NOT `inlineData`/`fileData`). `durationSeconds` must be a number, only 4/6/8 accepted. Costs $0.40/s ($3.20 per 8s clip at 720p)
-- ElevenLabs default voice: Sarah (`EXAVITQu4vr4xnSDxMaL`), stability=0.35, style=0.6 for engaging delivery
+- ElevenLabs voice: **Lily** (`pFZP5JQG7iQjIQuC4Bku`) — velvety British, stability=0.35, style=0.6. Preferred over Sarah for longer narration (deeper, more natural). Use informal, discovery-oriented narration style — not tutorial/guide tone
 - Video concat audio sync: all clips must use `-ar 48000 -ac 2 -c:a aac -b:a 192k`. Mismatched sample rates cause audio drift
 - xfade requires matching fps between clips. Veo outputs 24fps, our standard is 25fps — convert with `fps=25` filter
 - Single narration over visual transitions: build combined visual track first (xfade), then lay audio on top. Avoids voice cuts at scene boundaries
@@ -33,3 +33,4 @@
 - 2026-03-11: Added Veo 3.1 skill, ElevenLabs TTS skill. Created director skill (orchestrates all video production) and cleanup skill. Produced werewolf review v8 with Veo intro + crossfade + highlight walkthrough. Alex chose Sarah as ElevenLabs voice.
 - 2026-03-12: Fixed zoompan center-zoom jitter (4K internal res trick). Renamed skills: image→nanobanana, video→ffmpeg, voice→gemini-voice, highlight→webpage-highlight. Updated README. Produced v11 with 4-image slideshow intro (crossfades) + Veo clips.
 - 2026-03-14: Added `type` and `select` actions to highlight tool (React-aware typing + dropdown changes). Fixed 3 highlight bugs: sticky nav offset, generic selectors after scroll, viewport reset wiping React state. Produced werewolf game creation walkthrough video (13 scenes, 70s). Updated ElevenLabs skill: Gemini for drafts, ElevenLabs only for final cuts.
+- 2026-03-15–18: Full werewolf preview video (2:06, final: `werewolf-full-preview-lily-v2.mp4`). Seedance talking head + slideshow + app showcase. Switched from Sarah to Lily voice (deeper, British). Switched narration style from tutorial to casual/discovery. Major editing learnings saved to director skill (scene planning, pacing, audio, scrolling rules). Added `center` scroll + auto overlay cleanup to highlight tool. Transcripts stored in `generated-videos/transcripts/`.

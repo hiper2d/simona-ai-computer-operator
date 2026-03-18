@@ -188,12 +188,35 @@ Choose effects based on content type. Refer to the **ffmpeg skill** for detailed
 
 ## Scene planning rules
 
-- **One context per clip**: Each clip should show one screen/view. Don't navigate to a new page at the end of a clip — let the crossfade transition handle it.
-- **No trailing navigation**: If scene 1 is the lobby and scene 2 is the form, don't click "Create Game" at the end of scene 1. Just highlight it. The next scene starts on the form directly.
-- **Audio-first timing**: Generate narration audio first, then time video clips to match the audio duration. Pad short clips by looping.
+- **One context per clip**: Each clip should show one screen/view. Don't navigate at the end of a clip.
+- **Audio-first timing**: Generate narration audio first, then time video clips to match. Use `tpad=stop_mode=clone` to freeze the last frame — NEVER `stream_loop` (replays animations).
+- **Show actual changes**: When demonstrating form input, type a DIFFERENT value than what's pre-populated.
+- **No redundant scrolls**: Don't scroll twice to nearby positions in consecutive scenes. Merge or remove the redundant one.
+- **Minimal scrolling**: Group related sub-scenes (e.g., player card → play style → model) at the same scroll position. Only scroll when changing major sections.
+- **Center important sections**: Use `center: true` on scroll to position key sections in the middle of the viewport, not just below the nav.
+- **Clear at END of scene**: If the next scene scrolls, clear highlights at the end of the current scene — not the start of the next.
+
+## Pacing rules
+
+- **Highlight holds**: 1.5s minimum so the viewer registers it. 4-5s for major sections with narration.
+- **Pause before typing**: 1-1.5s with cursor focused in the empty field before typing starts.
+- **Typing speed**: 8-12 chars/sec. Slower = more readable.
+- **Fill the narration**: Visual actions should spread across the full narration duration. Minimize frozen-last-frame time.
+- **Silence padding**: 1s silence at end of each scene. Use hard cuts (concat), NOT acrossfade (causes voice dimming).
+
+## Audio rules
+
+- **Seedance ↔ other sections**: Hard cuts only (concat demuxer). No audio crossfade — preserves Seedance native voice.
+- **Within app showcase**: Hard cuts with silence padding. No `afade` or `acrossfade`.
+- **Voice-only fading on visuals**: `fade=t=in/out` on video track is OK. Never fade audio between narrated scenes.
+
+## Transcripts
+
+Save scene breakdowns and narration text to `generated-videos/transcripts/` for each production. Include: scene order, visual actions, narration text, scroll positions, transition types.
 
 ## Output
 
 - Videos go to `generated-videos/` with descriptive names and version numbers
+- **Never overwrite** — save each iteration as a new file
 - Log all paid API calls to `api-spending.csv`
 - Report: file path, duration, file size, scene breakdown

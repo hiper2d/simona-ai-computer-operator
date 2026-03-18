@@ -141,3 +141,7 @@ __pycache__/
 .DS_Store
 generated-videos/
 generated-audio
+
+# Tax documents
+docs/tax2025/
+.claude/skills/tax/**

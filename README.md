@@ -1,6 +1,6 @@
 # Simona: AI Computer Operator
 
-<img src="images/simona-2.png" width="600">
+<img src="generated-images/simona-streamer-studio.png" width="600">
 
 ## Who is Simona?
 
