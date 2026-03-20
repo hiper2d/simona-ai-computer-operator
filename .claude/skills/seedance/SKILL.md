@@ -121,7 +121,7 @@ AUDIO=true
 # 5s 1080p with audio ≈ $0.58
 COST=0.58  # adjust based on resolution/duration/audio
 
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),fal-ai,seedance-v1.5-pro-i2v,video,SLUG,$COST" >> api-spending.csv
+echo "$(date +%Y-%m-%dT%H:%M:%S%z),fal-ai,seedance-v1.5-pro-i2v,video,SLUG,$COST" >> api-spending.csv
 ```
 
 10. Report the file path, duration, resolution, and cost to the user.

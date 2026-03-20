@@ -8,7 +8,7 @@
 ## Key Learnings
 
 - YouTube Studio upload via browser automation works: navigate to studio.youtube.com → Create → Upload videos → use `DOM.setFileInputFiles` CDP method to inject file into hidden input
-- Ken Burns zoom: use 4K internal resolution (3840x2160) + downscale to 1080p to fix zoompan center-zoom jitter. The 1px wobble at 4K becomes sub-pixel after downscale
+- Ken Burns zoom: use 8K internal resolution (7680x4320) + downscale to 1080p to fix zoompan jitter on ANY direction (center, diagonal, etc). 4K works for center zoom only; diagonal/pan movements need 8K
 - Video skill supports: zoom in/out, horizontal pan, vertical scroll (for code), static, sectioned scroll, animated highlights
 - Sectioned scroll: for tall pages (>3000px), crop into sections and scroll each slowly (~80-120 px/s) instead of one fast continuous scroll
 - Highlight tool (`mcp/highlight/cli.py`): config-driven animated SVG borders on DOM elements via CDP. Frame-by-frame capture with paused Web Animations API. Reusable across any web page.
@@ -17,12 +17,15 @@
 - Veo 3.1 API: use `bytesBase64Encoded` for images (NOT `inlineData`/`fileData`). `durationSeconds` must be a number, only 4/6/8 accepted. Costs $0.40/s ($3.20 per 8s clip at 720p)
 - ElevenLabs voice: **Lily** (`pFZP5JQG7iQjIQuC4Bku`) — velvety British, stability=0.35, style=0.6. Preferred over Sarah for longer narration (deeper, more natural). Use informal, discovery-oriented narration style — not tutorial/guide tone
 - Video concat audio sync: all clips must use `-ar 48000 -ac 2 -c:a aac -b:a 192k`. Mismatched sample rates cause audio drift
+- Background music volume: use `volume=0.04` (4%) under narration. Narration stays at 1.0. This applies to any ambient/background audio — original video sounds, music, etc. Just enough to feel without competing with voice.
 - xfade requires matching fps between clips. Veo outputs 24fps, our standard is 25fps — convert with `fps=25` filter
 - Single narration over visual transitions: build combined visual track first (xfade), then lay audio on top. Avoids voice cuts at scene boundaries
 - Keep reusable intermediates in `/tmp/video-assets/` during iteration, clean up with `/cleanup` skill when done
 
 ## Feedback
 - Always ask Alex which AI video model to use before generating — don't auto-pick
+- Static images are too dry — use "animate + extend" technique: gen-AI short clip (5-6s) → crossfade back to ORIGINAL source image → extend with static zoom/pan effect. NEVER freeze on AI animation's last frame (unpredictable poses, closed eyes). Always crossfade to the clean source image. Aim for 2-3 AI video clips per video. Use 1-2 Kling (faces, hero shots) + LTX for the rest (cheap, good for non-face content).
+- YouTube shows ads — always skip/wait for ads before capturing screenshots. Never include ad content in video captures.
 
 ## Session Log
 

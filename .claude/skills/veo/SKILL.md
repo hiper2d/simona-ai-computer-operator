@@ -136,7 +136,7 @@ ffprobe -v error -show_entries stream=width,height -show_entries format=duration
 
 ```bash
 COST=$(python3 -c "print(DURATION * 0.40)")
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),google-veo,veo-3.1-generate-preview,video,SLUG,$COST" >> api-spending.csv
+echo "$(date +%Y-%m-%dT%H:%M:%S%z),google-veo,veo-3.1-generate-preview,video,SLUG,$COST" >> api-spending.csv
 ```
 
 **Pricing** (standard quality, as of March 2026):

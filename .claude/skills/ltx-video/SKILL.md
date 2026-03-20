@@ -123,7 +123,7 @@ RESOLUTION="1920x1080"
 RATE=0.06  # adjust based on model and resolution
 COST=$(python3 -c "print(round($DURATION * $RATE, 3))")
 
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),ltx-video,${MODEL},video,SLUG,$COST" >> api-spending.csv
+echo "$(date +%Y-%m-%dT%H:%M:%S%z),ltx-video,${MODEL},video,SLUG,$COST" >> api-spending.csv
 ```
 
 7. Report the file path, duration, resolution, and cost to the user.

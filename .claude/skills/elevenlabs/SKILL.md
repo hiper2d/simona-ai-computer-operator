@@ -14,14 +14,14 @@ Uses the ElevenLabs text-to-speech API via curl. Outputs an MP3 file. Produces m
 ## Default voice
 
 - **Voice**: Sarah (`EXAVITQu4vr4xnSDxMaL`) — Mature, Reassuring, Confident. American, young female.
-- **Model**: `eleven_turbo_v2_5` (fast, good quality)
-- **Settings**: stability=0.4, similarity_boost=0.75, style=0.5
+- **Model**: `eleven_multilingual_v2` (highest quality, slower but worth it)
+- **Settings**: stability=0.5, similarity_boost=0.75, style=0.5
 
 Override with flags in $ARGUMENTS:
 - `--voice NAME` — use a different voice (see table below)
 - `--stability N` — 0.0 (very expressive) to 1.0 (very consistent), default 0.4
 - `--style N` — 0.0 (neutral) to 1.0 (very stylized), default 0.5
-- `--model MODEL_ID` — override model (default: eleven_turbo_v2_5)
+- `--model MODEL_ID` — override model (default: eleven_multilingual_v2). Only use eleven_turbo_v2_5 if explicitly asked for speed over quality
 
 ## Available female voices
 
@@ -99,7 +99,7 @@ fi
 6. Log the API call to `api-spending.csv`:
 
 ```bash
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),elevenlabs,eleven_turbo_v2_5,voice,SLUG,0.30" >> api-spending.csv
+echo "$(date +%Y-%m-%dT%H:%M:%S%z),elevenlabs,eleven_turbo_v2_5,voice,SLUG,0.30" >> api-spending.csv
 ```
 
 Note: cost is approximate — ElevenLabs charges per character (~$0.30/1000 chars). A 60s narration (~4000 chars) costs ~$1.20.

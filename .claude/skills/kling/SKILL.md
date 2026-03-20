@@ -127,7 +127,7 @@ else
 fi
 COST=$(python3 -c "print(round($DURATION * $RATE, 3))")
 
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),fal-ai,kling-video-o3-${TIER},video,SLUG,$COST" >> api-spending.csv
+echo "$(date +%Y-%m-%dT%H:%M:%S%z),fal-ai,kling-video-o3-${TIER},video,SLUG,$COST" >> api-spending.csv
 ```
 
 10. Report the file path, duration, resolution, and cost to the user.

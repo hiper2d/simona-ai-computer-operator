@@ -59,7 +59,7 @@ Replace STYLE_PREFIX, TEXT_HERE, VOICE_NAME_HERE, and SLUG with appropriate valu
 4. Log the API call to `api-spending.csv` in the project root:
 
 ```bash
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),gemini,gemini-2.5-flash-tts,voice,SLUG,0.02" >> api-spending.csv
+echo "$(date +%Y-%m-%dT%H:%M:%S%z),gemini,gemini-2.5-flash-tts,voice,SLUG,0.02" >> api-spending.csv
 ```
 
 5. Report the file path to the user.
