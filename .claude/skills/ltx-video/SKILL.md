@@ -150,6 +150,19 @@ Videos are saved to `generated-videos/` in the project root.
 - Camera motions can be set via the `camera_motion` parameter instead of in the prompt
 - For talking head videos: describe facial expressions and mouth movement
 
+## Audio-to-video (audio-driven video generation)
+
+LTX has a separate **Audio-to-Video** model (launched Jan 2026, ElevenLabs partnership) that takes audio as the primary input + optional image + text prompt to generate synchronized video.
+
+**Not yet implemented as a skill.** Key specs from research:
+- Audio-driven: provide voice/music/SFX audio → video synced to it
+- Supports lip sync and ambient audio matching
+- Duration: up to 20s (matches audio length)
+- Native 4K at 50fps
+- Supports music-to-video (visualizations, lyric videos)
+
+This is different from the standard LTX image-to-video (which only generates native audio, doesn't accept audio input). When Alex gets access, create a separate skill or extend this one.
+
 ## When to use LTX vs Kling vs Veo vs ffmpeg
 
 - **LTX Pro (this skill)**: **Drafts**. $0.36 for 6s at 1080p. Fast iteration — synchronous API, no polling.

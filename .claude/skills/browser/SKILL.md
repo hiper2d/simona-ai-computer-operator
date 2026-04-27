@@ -47,6 +47,12 @@ uv run python mcp/browser/cli.py scroll --direction top
 # Execute arbitrary JavaScript
 uv run python mcp/browser/cli.py js "document.title"
 
+# Set viewport size (REQUIRED before video screenshots — prevents stretching)
+uv run python mcp/browser/cli.py viewport 1920x1080 --scale 1
+
+# Send raw CDP command (e.g., full-page screenshot)
+uv run python mcp/browser/cli.py cdp "Page.captureScreenshot" '{"format":"png","captureBeyondViewport":true,"clip":{"x":0,"y":0,"width":1920,"height":5000,"scale":1}}'
+
 # Take a screenshot (returns PNG file path — use Read tool to view)
 uv run python mcp/browser/cli.py screenshot
 

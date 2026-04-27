@@ -112,6 +112,31 @@ Note: cost is approximate — ElevenLabs charges per character (~$0.30/1000 char
 - **similarity_boost** (0.0–1.0): How closely to match the original voice. Keep at 0.75 for pre-made voices.
 - **style** (0.0–1.0): Amplifies the voice's natural style. Higher = more character. Use 0.3–0.5 for narration, 0.0 for neutral reading.
 
+## Voice post-processing for character voices
+
+Standard ElevenLabs voices can be transformed into character voices with ffmpeg:
+
+```bash
+# Werewolf/beast voice: pitch down 15% + hall echo
+ffmpeg -y -i input.mp3 \
+  -af "asetrate=44100*0.85,aresample=44100,aecho=0.8:0.7:40:0.3" \
+  output.mp3
+
+# Deeper beast: pitch down 20% + heavier echo
+ffmpeg -y -i input.mp3 \
+  -af "asetrate=44100*0.80,aresample=44100,aecho=0.8:0.6:50:0.4" \
+  output.mp3
+
+# Subtle deep voice: pitch down 10% + light echo
+ffmpeg -y -i input.mp3 \
+  -af "asetrate=44100*0.90,aresample=44100,aecho=0.8:0.8:30:0.2" \
+  output.mp3
+```
+
+**Best base voices for beast/werewolf**: George (British storyteller) pitched down 15% — sophisticated and menacing.
+
+**Always generate test samples first** — one line with each candidate voice + effect before committing to all chunks.
+
 ## When to use ElevenLabs vs Google TTS
 
 **IMPORTANT: Use Gemini/Google voice for ALL prototyping and iteration. Only use ElevenLabs for final polished cuts that Alex has approved.** ElevenLabs costs add up fast (~$0.30/clip, 13 clips = ~$3.90 wasted on a draft).

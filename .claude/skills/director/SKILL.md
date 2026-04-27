@@ -83,13 +83,15 @@ When one narration spans a visual transition (e.g., voice continues as cover ima
 
 #### Transition types
 
-**Crossfade (xfade)** — smooth blend between two clips:
+**Crossfade (xfade + acrossfade)** — smooth blend between two clips:
 ```bash
 # Both clips MUST have same fps, resolution, pixel format
 # offset = first clip duration - crossfade duration
+# CRITICAL: xfade and acrossfade MUST use the same duration
+# Add 0.5s silence bookends to audio first (see Audio rules)
 ffmpeg -y -i clip1.mp4 -i clip2.mp4 \
-  -filter_complex "[0:v][1:v]xfade=transition=fade:duration=1:offset=OFFSET[v]" \
-  -map "[v]" -c:v libx264 -pix_fmt yuv420p -an output.mp4
+  -filter_complex "[0:v][1:v]xfade=transition=fade:duration=0.5:offset=OFFSET[v];[0:a][1:a]acrossfade=d=0.5[a]" \
+  -map "[v]" -map "[a]" -c:v libx264 -pix_fmt yuv420p -c:a aac -ar 48000 -ac 2 -b:a 192k output.mp4
 ```
 
 **Fade to black** — scene ends with fade out, next scene fades in:
@@ -131,6 +133,30 @@ Report the final video details (path, duration, size, structure). The user will 
 - Only rebuild the scenes that changed
 - Keep the concat step lightweight (stream copy when possible)
 
+### Production log
+
+Every video project in `video-projects/` MUST have a `production-log.md`. Update it after each session.
+
+**What to log:**
+- Date and what was done
+- Creative decisions and why
+- Technical learnings (what worked, what didn't)
+- Iteration history (what changed between versions)
+
+**Raw materials tracking — CRITICAL:**
+Every raw material (image, audio chunk, video clip) must be listed with its **file path** relative to the project dir. When a clip is only embedded in a draft (not saved separately), extract it and save it as a standalone file. Never rely on extracting from assembled drafts later — files get lost.
+
+Example format:
+```
+### Raw materials
+- **Host image A**: `scene01/werewolf-host-a.png`
+- **Host Kling clip A**: `scene01/host-a-kling.mp4` (5s, 1928x1072)
+- **Narration 1a**: `scene01/audio/1a-bookend.wav` (4.4s, Beast George pitched -15% + hall echo)
+- **Card draw Kling**: `scene01/card-draw-kling.mp4` (5s, 1928x1072) — robots turning heads
+```
+
+**Always save generated clips as standalone files** — even if they'll be crossfaded into a larger assembly. Name them descriptively: `{subject}-{model}.mp4` (e.g., `host-a-kling.mp4`, `card-draw-seedance2.mp4`).
+
 ## Scene effect selection
 
 Choose effects based on content type. Refer to the **ffmpeg skill** for detailed effect docs.
@@ -143,8 +169,29 @@ Choose effects based on content type. Refer to the **ffmpeg skill** for detailed
 | Web app UI (form/modal) | Static or gentle zoom | |
 | Code / terminal | Scroll down | Never zoom on code |
 | Web app walkthrough | Highlight capture | Self-drawing SVG borders |
+| App button click | Cursor click (`mcp/cursor/animate.py`) | Click at END of segment, before transition |
+| App dropdown / list | Dropdown scroll (slideshow) | Capture N scroll positions, ~1.7s each |
+| App section explain | Scroll-to-element + highlight | Full-page capture → scroll → drawbox on div |
 | Transition | Fade to black (1s) | Between major sections |
 | Same-scene visual change | Crossfade (xfade) | E.g., static image → Veo animation |
+
+### App walkthrough rules
+
+When showing a web app in a video (game creation, UI demo, etc.):
+
+1. **Set viewport first**: `uv run python mcp/browser/cli.py viewport 1920x1080 --scale 1`. Screenshots are 2x retina — always downscale: `ffmpeg -vf "scale=1920:1080:flags=lanczos"`.
+
+2. **Get coordinates from JS**, never guess. Use `getBoundingClientRect()` for buttons, cards, form fields. CSS pixel coords = image pixels after downscale.
+
+3. **Cursor clicks at end of segment**: Use `--total-duration` so the click happens right before the transition to the next segment. This creates a "click → page loads" illusion.
+
+4. **Scroll continuously across segments**: When multiple segments show the same page, each starts where the previous ended. No repeated scrolling.
+
+5. **Highlight full container divs**, not individual fields. Walk up the DOM from a known child to find the card/section wrapper div.
+
+6. **Dropdown content**: Open the dropdown, capture screenshots at multiple scroll positions, build a slideshow. Shows the full list naturally.
+
+See the **ffmpeg skill** "App walkthrough effects" section for implementation details.
 
 ## Audio strategy
 
@@ -175,7 +222,7 @@ Choose effects based on content type. Refer to the **ffmpeg skill** for detailed
 | Asset | Cost | Notes |
 |-------|------|-------|
 | LTX Pro clip (6s, 1080p) | ~$0.36 | **Drafts/prototyping** — cheap & fast |
-| Seedance 1.5 Pro clip (5s, 1080p) | ~$0.58 | **Final quality** — comparable to Kling |
+| Seedance 2.0 clip (5s, 720p) | ~$1.51 | **Final quality** — native voice + lip-sync. Max 720p |
 | Kling Pro clip (5s, 1080p) | ~$0.70 | **Final quality** — comparable to Seedance |
 | Veo clip (8s, 720p) | ~$3.20 | Only for text-to-video (no input image) |
 | ElevenLabs narration | ~$0.30/generation | Per API call |
@@ -202,13 +249,23 @@ Choose effects based on content type. Refer to the **ffmpeg skill** for detailed
 - **Pause before typing**: 1-1.5s with cursor focused in the empty field before typing starts.
 - **Typing speed**: 8-12 chars/sec. Slower = more readable.
 - **Fill the narration**: Visual actions should spread across the full narration duration. Minimize frozen-last-frame time.
-- **Silence padding**: 1s silence at end of each scene. Use hard cuts (concat), NOT acrossfade (causes voice dimming).
+- **Silence padding**: 1s silence at end of each scene.
 
 ## Audio rules
 
 - **Seedance ↔ other sections**: Hard cuts only (concat demuxer). No audio crossfade — preserves Seedance native voice.
-- **Within app showcase**: Hard cuts with silence padding. No `afade` or `acrossfade`.
-- **Voice-only fading on visuals**: `fade=t=in/out` on video track is OK. Never fade audio between narrated scenes.
+- **Smooth crossfade transitions**: When using xfade (video) + acrossfade (audio), they MUST use the same duration. Mismatched values cause progressive audio/video drift. Add silence bookends to each audio chunk: 0.5s at the END of all chunks, 0.5s at the START of all chunks except the first. This way acrossfade blends silence-to-silence and speech always plays at full volume — no voice dimming.
+- **Voice-only fading on visuals**: `fade=t=in/out` on video track is OK.
+- **Audio normalization**: Normalize all audio chunks to -16 LUFS before assembly (two-pass loudnorm). Different TTS chunks can have varying levels.
+
+## Extending AI video clips
+
+When a Kling/Seedance clip (5s) needs to cover longer audio:
+1. Extract the LAST frame: `ffmpeg -ss <near_end> -i clip.mp4 -vframes 1 lastframe.png`
+2. Create a zoompan clip from the last frame (slow zoom in)
+3. Crossfade (0.5s) from the AI clip into the zoom clip
+4. Trim to match audio duration
+Never use the source image — the last frame continues the animation's pose naturally.
 
 ## Transcripts
 

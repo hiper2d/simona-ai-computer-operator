@@ -153,6 +153,40 @@ Videos are saved to `generated-videos/` in the project root.
 - Keep it focused — Kling works best with clear, specific motion descriptions
 - For subtle animation of portraits: "slight head movement, blinking, gentle breathing motion"
 
+## Lip-sync (video + audio → synced video)
+
+Kling has a separate **LipSync** model that takes an existing video + audio and re-renders mouth movements to match the speech. It's a post-processing step, not a generator.
+
+**Endpoint**: `fal-ai/kling-video/lipsync/audio-to-video`
+
+| Parameter | Value |
+|-----------|-------|
+| `video_url` | MP4/MOV, 2-10s, ≤100MB, 720p or 1080p |
+| `audio_url` | MP3/WAV/OGG/M4A/AAC, 2-60s, ≤5MB |
+| Cost | $0.014/s (per video second) |
+| Processing | ~12 min (fixed) |
+
+**Workflow**: Generate a Kling video (image-to-video) → upload video + narration audio → run LipSync → get video with synced mouth.
+
+```bash
+RESPONSE=$(curl -s -X POST "https://queue.fal.run/fal-ai/kling-video/lipsync/audio-to-video" \
+  -H "Authorization: Key ${FAL_K}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_url": "'"$VIDEO_FILE_URL"'",
+    "audio_url": "'"$AUDIO_FILE_URL"'"
+  }')
+REQUEST_ID=$(echo "$RESPONSE" | jq -r '.request_id')
+```
+
+Poll/fetch same as regular Kling (uses `fal-ai/kling-video/requests/` path).
+
+**Notes**:
+- Audio can be longer than video (up to 60s vs 10s) — lips stop when video ends
+- Works best on close-up shots where the face/mouth is clearly visible
+- Zero-shot — no speaker-specific training needed
+- Also has a text-to-video variant: `fal-ai/kling-video/lipsync/text-to-video` (takes text + voice selection instead of audio)
+
 ## When to use Kling vs Veo vs ffmpeg
 
 - **LTX Pro**: **Drafts**. $0.36 for 6s at 1080p. Cheap iteration.

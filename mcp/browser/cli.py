@@ -16,6 +16,7 @@ Usage:
 """
 
 import asyncio
+import json
 import sys
 from pathlib import Path
 
@@ -116,6 +117,36 @@ async def main():
         elif command == "screenshot":
             tab = int(_parse_flag(args, "--tab", "0"))
             print(await take_screenshot(client, tab_index=tab))
+
+        elif command == "viewport":
+            # Set viewport size: viewport WIDTHxHEIGHT [--scale N] [--tab N]
+            if not args:
+                print("Error: size required (e.g. 1920x1080)")
+                sys.exit(1)
+            size = args.pop(0)
+            w, h = map(int, size.split("x"))
+            scale = float(_parse_flag(args, "--scale", "1"))
+            tab = int(_parse_flag(args, "--tab", "0"))
+            from tools import _get_page_target_id
+            target_id = await _get_page_target_id(client, tab)
+            await client.send(target_id, "Emulation.setDeviceMetricsOverride", {
+                "width": w, "height": h,
+                "deviceScaleFactor": scale, "mobile": False
+            })
+            print(json.dumps({"viewport": f"{w}x{h}", "scale": scale}))
+
+        elif command == "cdp":
+            # Send raw CDP command: cdp METHOD [JSON_PARAMS] [--tab N]
+            if not args:
+                print("Error: CDP method required")
+                sys.exit(1)
+            method = args.pop(0)
+            tab = int(_parse_flag(args, "--tab", "0"))
+            params = json.loads(args.pop(0)) if args else None
+            from tools import _get_page_target_id
+            target_id = await _get_page_target_id(client, tab)
+            result = await client.send(target_id, method, params)
+            print(json.dumps(result))
 
         elif command == "close":
             if not args:

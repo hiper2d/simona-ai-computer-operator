@@ -26,28 +26,70 @@ ffmpeg -y -loop 1 -i IMAGE_PATH -i AUDIO_PATH \
   OUTPUT_PATH
 ```
 
-### Mode B: Multiple images + Audio → Slideshow
+### Mode B: Slideshow (two types)
 
-Combine multiple images with audio, each image shown for a set duration.
+Two slideshow variants based on how voice aligns with visuals:
 
-1. Create a concat file listing each image with its duration:
-```
-file 'image1.png'
-duration 5
-file 'image2.png'
-duration 5
-file 'image3.png'
-duration 5
-```
+#### B1: Unsynced slideshow (one voice over all slides)
 
-2. Run ffmpeg:
+One continuous narration plays over all slides. Slides transition via crossfade independently of the voice. Use when the narration is a single thought that flows over atmospheric imagery.
+
+**Steps:**
+1. Build each slide as a Ken Burns zoom clip (~2.5-3.2s each):
 ```bash
-ffmpeg -y -f concat -safe 0 -i concat.txt -i AUDIO_PATH \
-  -c:v libx264 -pix_fmt yuv420p \
-  -c:a aac -b:a 192k \
-  -shortest \
-  -movflags +faststart \
-  OUTPUT_PATH
+FRAMES=$((SLIDE_DUR_MS * 25 / 1000))
+ffmpeg -y -loop 1 -i slide.png \
+  -vf "scale=7680:4320:force_original_aspect_ratio=decrease,pad=7680:4320:(ow-iw)/2:(oh-ih)/2,zoompan=z='1.0+0.12*on/${FRAMES}':x='iw/2-(iw/(1.0+0.12*on/${FRAMES})/2)':y='ih/2-(ih/(1.0+0.12*on/${FRAMES})/2)':d=${FRAMES}:s=7680x4320:fps=25,scale=1920:1080" \
+  -c:v libx264 -pix_fmt yuv420p -t SLIDE_DUR -an -r 25 slide_clip.mp4
+```
+
+2. Chain crossfade transitions (0.3s each). Must chain step by step — ffmpeg xfade on 5+ inputs in one filter_complex is unreliable. Use **dynamic offsets** — read the previous clip's duration instead of hardcoding:
+```bash
+# First pair
+ffmpeg -y -i slide1.mp4 -i slide2.mp4 \
+  -filter_complex "[0:v][1:v]xfade=transition=fade:duration=0.3:offset=2.7[v]" \
+  -map "[v]" -c:v libx264 -pix_fmt yuv420p -r 25 -an x2.mp4
+
+# Then loop: offset = prev_duration - 0.3
+for i in 3 4 5 6 7 8; do
+  prev_dur=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 x$((i-1)).mp4)
+  offset=$(python3 -c "print(round(${prev_dur} - 0.3, 1))")
+  ffmpeg -y -i x$((i-1)).mp4 -i slide${i}.mp4 \
+    -filter_complex "[0:v][1:v]xfade=transition=fade:duration=0.3:offset=${offset}[v]" \
+    -map "[v]" -c:v libx264 -pix_fmt yuv420p -r 25 -an x${i}.mp4
+done
+cp x8.mp4 slideshow-visual.mp4
+```
+
+3. Overlay the single narration audio:
+```bash
+ffmpeg -y -i slideshow_visual.mp4 -i narration.wav \
+  -filter_complex "[1:a]adelay=300|300,apad=whole_dur=TOTAL[a]" \
+  -map "0:v" -map "[a]" -t TOTAL \
+  -c:v libx264 -pix_fmt yuv420p -ar 48000 -ac 2 -c:a aac -b:a 192k \
+  slideshow_final.mp4
+```
+
+**Planning**: total_slides = ceil(narration_duration / slide_duration). Target ~2.5-3.2s per slide.
+
+#### B2: Synced slideshow (per-slide voice chunks)
+
+Each slide has its own dedicated voice chunk. Use when each slide explains something specific (e.g., role cards, feature screenshots). Generate separate audio per slide, build each slide to match its audio duration, then concatenate.
+
+```bash
+# Build each slide to match its audio
+for i in 1 2 3; do
+  AUD_DUR=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 narration_${i}.wav)
+  TOTAL=$(python3 -c "print(${AUD_DUR} + 0.5)")
+  # Build zoom clip
+  ffmpeg -y -loop 1 -i slide${i}.png ... -t ${TOTAL} -an slide${i}_clip.mp4
+  # Combine with audio
+  ffmpeg -y -i slide${i}_clip.mp4 -i narration_${i}.wav \
+    -filter_complex "[1:a]adelay=500|500,apad=whole_dur=${TOTAL}[a]" \
+    -map "0:v" -map "[a]" -t ${TOTAL} ... slide${i}_final.mp4
+done
+# Concatenate all
+ffmpeg -y -f concat -safe 0 -i concat.txt -c copy slideshow.mp4
 ```
 
 ### Mode C: Image + Audio + Subtitles
@@ -206,6 +248,16 @@ ffmpeg -y -loop 1 -i scene.png \
 
 Tuning: `0.15` zoom range is subtle and cinematic. Going past `0.25` looks pixelated on standard images.
 
+**CRITICAL — zoompan loop bug:** When using `-loop 1` with zoompan, if zoompan's `d` frames run out before `-t` duration, the loop restarts the image AND resets zoompan — causing a visible "snap back to original size" mid-clip. **Fix:** always use `d=110` (4.4s worth at 25fps) as a minimum, regardless of actual slide duration. For clips longer than 4s, use `d = ceil(duration * 25 * 1.3)`. Rely on `-t` to cut the clip. Never set `d` to exactly `duration * fps`.
+
+**CRITICAL — zoompan prescale:** Always pre-scale images to the zoompan internal resolution (7680x4320) as a separate step BEFORE running zoompan. Some image aspect ratios cause zoompan to produce fewer frames than expected when scaling and zoompan are in the same filter chain:
+```bash
+# Step 1: prescale
+ffmpeg -y -i input.png -vf "scale=7680:4320:force_original_aspect_ratio=decrease,pad=7680:4320:(ow-iw)/2:(oh-ih)/2" prescaled.png
+# Step 2: zoompan on prescaled image
+ffmpeg -y -loop 1 -i prescaled.png -vf "zoompan=z=...:d=110:s=7680x4320:fps=25,scale=1920:1080" -t 3.0 ...
+```
+
 ### Horizontal scroll (wide content)
 
 For WIDE panoramic images (wider than 1920px). The image height must fit 1080px exactly — no top/bottom cropping.
@@ -282,6 +334,139 @@ For code walkthroughs or text-heavy content where motion would distract:
 ffmpeg -y -loop 1 -i code.png \
   -c:v libx264 -tune stillimage -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
 ```
+
+### App walkthrough effects
+
+Three effects for showing web app UI in video walkthroughs. All require the **browser skill** for screenshots and the browser viewport set to 1920x1080:
+
+```bash
+uv run python mcp/browser/cli.py viewport 1920x1080 --scale 1
+```
+
+Screenshots come out at 3840x2160 (2x retina). Always downscale:
+```bash
+ffmpeg -y -i raw.png -vf "scale=1920:1080:flags=lanczos" screenshot.png
+```
+
+Use JS `getBoundingClientRect()` for element coordinates — CSS pixels map 1:1 to image pixels after downscale.
+
+#### Cursor move + click on button
+
+Shows a cursor smoothly moving to a button and clicking it. Use `mcp/cursor/animate.py`.
+
+**Key parameters:**
+- `--start X,Y` — cursor start position (keep close to target, ~200-300px away)
+- `--target X,Y` — button center (from `getBoundingClientRect()`: `cx = x + w/2, cy = y + h/2`)
+- `--button X,Y,W,H` — button rect for highlight effect on click (from `getBoundingClientRect()`)
+- `--total-duration N` — total clip length; cursor moves late so **click happens at the end**, right before the transition to the next segment (creates "click → next page" illusion)
+
+```bash
+python3 mcp/cursor/animate.py \
+  --image screenshot.png \
+  --start 750,550 --target 861,780 \
+  --button 740,748,242,64 \
+  --total-duration 7.5 \
+  --output cursor-click.mp4
+```
+
+**Getting button coordinates:**
+```bash
+uv run python mcp/browser/cli.py js "
+var btn = document.querySelector('a.my-button');
+var r = btn.getBoundingClientRect();
+JSON.stringify({cx: Math.round(r.x+r.width/2), cy: Math.round(r.y+r.height/2), x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height)});
+"
+```
+
+#### Dropdown scroll (showing list contents)
+
+Captures multiple screenshots of a dropdown at different scroll positions, then builds a slideshow.
+
+**Steps:**
+1. Open the dropdown (click the trigger button)
+2. Screenshot → downscale to 1920x1080 → save as `dropdown-1.png`
+3. Scroll the dropdown container via JS: `el.scrollTop += 200`
+4. Screenshot → save as `dropdown-2.png`
+5. Repeat until all content is shown
+6. Build a slideshow with `~1.7s` per frame:
+
+```bash
+cat > concat.txt << 'EOF'
+file 'dropdown-1.png'
+duration 1.7
+file 'dropdown-2.png'
+duration 1.7
+file 'dropdown-3.png'
+duration 1.7
+file 'dropdown-3.png'
+EOF
+
+ffmpeg -y -f concat -safe 0 -i concat.txt \
+  -vf "fps=25" -c:v libx264 -pix_fmt yuv420p -an -r 25 dropdown.mp4
+```
+
+**Scrolling a dropdown container via JS:**
+```bash
+uv run python mcp/browser/cli.py js "
+var el = document.querySelector('.dropdown-menu');
+// Or find scrollable parent of checkboxes:
+// var el = document.querySelector('input[type=checkbox]').parentElement;
+// while (el && el.scrollHeight <= el.clientHeight) el = el.parentElement;
+el.scrollTop += 200;
+JSON.stringify({scrollTop: el.scrollTop, scrollHeight: el.scrollHeight});
+"
+```
+
+#### Scroll-to-element + highlight
+
+Scrolls a full-page screenshot to center a specific element, pauses, and draws a highlight border around it. For explaining specific UI sections.
+
+**Steps:**
+
+1. **Capture full page** (needs CDP command, not regular screenshot):
+```bash
+uv run python mcp/browser/cli.py cdp "Page.captureScreenshot" \
+  '{"format":"png","captureBeyondViewport":true,"clip":{"x":0,"y":0,"width":1920,"height":PAGE_HEIGHT,"scale":1}}'
+# Decode base64, save, then scale to 1920 width:
+ffmpeg -y -i raw.png -vf "scale=1920:-1" fullpage.png
+```
+
+2. **Get element's page position** via JS (use `scrollY + getBoundingClientRect().y`):
+```bash
+uv run python mcp/browser/cli.py js "
+var el = document.querySelector('.player-card');
+var r = el.getBoundingClientRect();
+JSON.stringify({
+  pageY: Math.round(r.y + window.scrollY),
+  x: Math.round(r.x), w: Math.round(r.width), h: Math.round(r.height)
+});
+"
+```
+
+3. **Calculate scroll target** to center the element:
+```
+scroll_target = element_pageY + element_height/2 - 540  (viewport center = 540)
+```
+
+4. **Build the clip** with scroll + highlight:
+```bash
+# Element in viewport after scroll: viewport_y = pageY - scroll_target
+ffmpeg -y -loop 1 -i fullpage.png \
+  -vf "crop=1920:1080:0:'if(lt(t,HOLD),START_Y,if(lt(t,HOLD+SCROLL_DUR),START_Y+min((t-HOLD)/SCROLL_DUR*SCROLL_PX,SCROLL_PX),END_Y))',\
+fps=25,\
+drawbox=x=EL_X:y=EL_VIEWPORT_Y:w=EL_W:h=EL_H:color=cyan@0.5:t=4:enable='gte(t,HIGHLIGHT_START)'" \
+  -c:v libx264 -pix_fmt yuv420p -t TOTAL -an -r 25 clip.mp4
+```
+
+**Continuous scroll across segments:** When multiple segments scroll the same page, each segment should start where the previous one ended:
+- Seg A: scroll from y=200 to y=700
+- Seg B: scroll from y=700 to y=712, then highlight
+- Seg C: scroll from y=712 to y=4336, then highlight
+
+**Highlight rules:**
+- Use `drawbox` with `color=cyan@0.5:t=4` (thick border, visible on dark UIs)
+- Get element dimensions from JS `getBoundingClientRect()` — use the actual DOM element's container div, not individual form fields
+- For player cards / form sections: find the wrapper div by walking up from a known child element until you find one with `height > 200` and multiple child inputs
 
 ### Animated highlights (self-drawing borders on web pages)
 

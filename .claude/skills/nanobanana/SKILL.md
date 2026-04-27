@@ -51,6 +51,17 @@ Photography modifiers that work well:
 
 For character consistency, specify in prompt: "This is the same woman/man shown in these reference photos. Same face, same glasses, same hair, same clothing."
 
+### Realism & detail boosters
+
+When the user wants photorealistic results, enhance prompts with these techniques:
+
+- **Specific camera model**: "shot on Canon EOS R5", "Fujifilm X-T5" — primes the model for realistic color science, depth of field, and sharpness rather than generic "photorealistic"
+- **Technical specs**: "8k, raw" — pushes toward high-detail output
+- **Micro-texture / imperfections**: "stray hairs", "sand particles on skin", "water droplets", "pores visible", "fabric texture" — breaks the smooth AI look and sells realism
+- **Skin rendering**: "glistening with water/oil", "subsurface scattering" — adds believable skin translucency and sheen
+- **Explicit lighting setup**: "direct overhead sunlight creating sharp shadows", "golden hour side lighting" — concrete lighting directions beat vague "good lighting"
+- **Composition framing**: "close-up focusing on mid-body", "over-the-shoulder medium shot" — tells the model exactly what to frame for consistent results
+
 ## Steps
 
 1. Parse $ARGUMENTS as the image prompt.

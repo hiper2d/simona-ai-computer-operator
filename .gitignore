@@ -145,3 +145,4 @@ generated-audio
 # Tax documents
 docs/tax2025/
 .claude/skills/tax/**
+.claude/skills/fidelity/**
