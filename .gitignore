@@ -146,3 +146,4 @@ generated-audio
 docs/tax2025/
 .claude/skills/tax/**
 .claude/skills/fidelity/**
+.claude/skills/meds/**

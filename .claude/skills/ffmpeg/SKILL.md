@@ -199,7 +199,7 @@ Use `zoompan` to slowly zoom in or out.
 
 **IMPORTANT — zoompan jitter bug:** When using `x` and `y` expressions for centered zoom, the values oscillate between adjacent pixels, causing visible wobble. Even `trunc()` doesn't fix it at 1080p.
 
-**Fix: run zoompan at 4K internally, downscale to 1080p.** The 1-pixel jitter at 3840x2160 becomes a sub-pixel shift after downscaling — invisible.
+**Fix: run zoompan at 4K internally (3840x2160), downscale to 1080p.** The 1-pixel jitter at 4K becomes a sub-pixel shift after downscaling — invisible. Do NOT use 8K (7680x4320) — it causes frame count bugs with some images.
 
 **Centered zoom IN** (1.0x → 1.15x) — smooth, no jitter:
 
@@ -208,6 +208,7 @@ FRAMES=$((DURATION_SEC * 25))
 
 ffmpeg -y -loop 1 -i scene.png \
   -vf "scale=3840:2160:force_original_aspect_ratio=decrease,pad=3840:2160:(ow-iw)/2:(oh-ih)/2,zoompan=z='1.0+0.15*on/${FRAMES}':x='iw/2-(iw/(1.0+0.15*on/${FRAMES})/2)':y='ih/2-(ih/(1.0+0.15*on/${FRAMES})/2)':d=${FRAMES}:s=3840x2160:fps=25,scale=1920:1080" \
+  -frames:v ${FRAMES}" \
   -c:v libx264 -pix_fmt yuv420p -t ${DURATION_SEC} -an clip.mp4
 ```
 
@@ -248,14 +249,18 @@ ffmpeg -y -loop 1 -i scene.png \
 
 Tuning: `0.15` zoom range is subtle and cinematic. Going past `0.25` looks pixelated on standard images.
 
-**CRITICAL — zoompan loop bug:** When using `-loop 1` with zoompan, if zoompan's `d` frames run out before `-t` duration, the loop restarts the image AND resets zoompan — causing a visible "snap back to original size" mid-clip. **Fix:** always use `d=110` (4.4s worth at 25fps) as a minimum, regardless of actual slide duration. For clips longer than 4s, use `d = ceil(duration * 25 * 1.3)`. Rely on `-t` to cut the clip. Never set `d` to exactly `duration * fps`.
+**CRITICAL — zoompan loop bug:** When using `-loop 1` with zoompan, if zoompan's `d` frames run out before `-t` duration, the loop restarts the image AND resets zoompan — causing a visible "snap back to original size" mid-clip. **Fix:** always set `d=200` (8 seconds worth — way beyond any slide duration) so zoompan **never finishes its cycle**. Use `-t DURATION` to cut the clip. The zoom expression still references the real frame count for correct zoom speed (e.g., `on/75` for 3s). Never set `d` equal to or near the actual frame count.
 
-**CRITICAL — zoompan prescale:** Always pre-scale images to the zoompan internal resolution (7680x4320) as a separate step BEFORE running zoompan. Some image aspect ratios cause zoompan to produce fewer frames than expected when scaling and zoompan are in the same filter chain:
+**CRITICAL — zoompan prescale + resolution:** Pre-scale images to the zoompan internal resolution as a separate step. Use **4K (3840x2160)** not 8K — 8K causes frame count miscalculations on some images, leading to the loop bug even with oversized `d`. 4K is sufficient to eliminate jitter. Always add `-frames:v N` as a hard cap to guarantee no looping:
 ```bash
-# Step 1: prescale
-ffmpeg -y -i input.png -vf "scale=7680:4320:force_original_aspect_ratio=decrease,pad=7680:4320:(ow-iw)/2:(oh-ih)/2" prescaled.png
-# Step 2: zoompan on prescaled image
-ffmpeg -y -loop 1 -i prescaled.png -vf "zoompan=z=...:d=110:s=7680x4320:fps=25,scale=1920:1080" -t 3.0 ...
+# Step 1: prescale to 4K
+ffmpeg -y -i input.png -vf "scale=3840:2160:force_original_aspect_ratio=decrease,pad=3840:2160:(ow-iw)/2:(oh-ih)/2" prescaled.png
+# Step 2: zoompan at 4K with hard frame cap
+FRAME_COUNT=75  # 3.0s at 25fps — controls zoom speed
+ffmpeg -y -loop 1 -i prescaled.png \
+  -vf "zoompan=z='1.0+0.12*on/${FRAME_COUNT}':x='iw/2-(iw/(1.0+0.12*on/${FRAME_COUNT})/2)':y='ih/2-(ih/(1.0+0.12*on/${FRAME_COUNT})/2)':d=200:s=3840x2160:fps=25,scale=1920:1080" \
+  -c:v libx264 -pix_fmt yuv420p -t 3.0 -an -r 25 clip.mp4
+# d=200 prevents loop reset, -t 3.0 cuts the clip, on/75 controls zoom speed
 ```
 
 ### Horizontal scroll (wide content)

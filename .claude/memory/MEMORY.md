@@ -9,7 +9,7 @@
 
 - Hyperrealistic image prompts: adding camera specs (Canon EOS R5, 35mm, f/2.8), technical details (8k, raw), skin/texture cues (subsurface scattering, pores visible, stray hairs, fabric texture, dust particles), and specific lighting setups (direct overhead sunlight, candlelight with soft orange fill) massively improves realism over generic "highly detailed" prompts. Works with Gemini Flash Image model.
 - YouTube Studio upload via browser automation works: navigate to studio.youtube.com → Create → Upload videos → use `DOM.setFileInputFiles` CDP method to inject file into hidden input
-- Ken Burns zoom: use 8K internal resolution (7680x4320) + downscale to 1080p to fix zoompan jitter on ANY direction (center, diagonal, etc). 4K works for center zoom only; diagonal/pan movements need 8K
+- Ken Burns zoom: use 4K internal resolution (3840x2160) + downscale to 1080p to fix zoompan jitter. Do NOT use 8K — it causes frame count bugs on some images leading to zoom-reset loops. Always prescale separately + use `-frames:v N` hard cap.
 - Video skill supports: zoom in/out, horizontal pan, vertical scroll (for code), static, sectioned scroll, animated highlights
 - Sectioned scroll: for tall pages (>3000px), crop into sections and scroll each slowly (~80-120 px/s) instead of one fast continuous scroll
 - Highlight tool (`mcp/highlight/cli.py`): config-driven animated SVG borders on DOM elements via CDP. Frame-by-frame capture with paused Web Animations API. Reusable across any web page.
@@ -29,6 +29,8 @@
 - Browser viewport for video: always `uv run python mcp/browser/cli.py viewport 1920x1080 --scale 1` before capturing. Screenshots are 2x retina (3840x2160) — downscale with `scale=1920:1080:flags=lanczos`. CSS pixel coords from JS map 1:1 to image pixels after downscale.
 - App walkthrough scroll: capture full page with `cdp "Page.captureScreenshot" '{"captureBeyondViewport":true,...}'`, scale to 1920 width, use `crop` filter with time-based y expression. Get element positions via JS `getBoundingClientRect()` + `scrollY`.
 - OpenAI gpt-image-2: great for thematic/conceptual images (VS battles, corporate scenes, campsite day/night). Use 1792x1024 landscape. Always prescale to 7680x4320 before zoompan to avoid frame count bugs.
+- Browser screenshots on retina Mac: `Page.captureScreenshot` always captures at 2x regardless of `Emulation.setDeviceMetricsOverride` deviceScaleFactor. To get clean 1280-wide README screenshots, capture as-is (returns 2560x1600) then `sips -z H W input.png --out output.png` to downscale. Helper: `bash /tmp/capture.sh <name>.png` writes 1280x800 PNGs straight into the target folder.
+- Werewolf game UI scrolls inside `<main>` (not document body). To scroll the chat: `document.querySelector('main').scrollTop = N`. Day selector is a `<button>` with text "Day N" — clicking opens a dropdown with each day as a `<button>` text "Day X"; past days load read-only ("Day N history" banner).
 
 ## Feedback
 - Always ask Alex which AI video model to use before generating — don't auto-pick
