@@ -144,6 +144,14 @@ generated-audio
 
 # Tax documents
 docs/tax2025/
+docs/usf/
 .claude/skills/tax/**
 .claude/skills/fidelity/**
 .claude/skills/meds/**
+.claude/skills/usf-application/**
+.claude/skills/vacation-2026/**
+.claude/memory/usf_ms_ai_application.md
+
+# Kokoro TTS model weights (download separately)
+mcp/kokoro/models/*.onnx
+mcp/kokoro/models/*.bin

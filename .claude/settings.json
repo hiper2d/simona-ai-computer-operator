@@ -4,6 +4,16 @@
     "command": "bash .claude/statusline-command.sh"
   },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/voice-control.sh"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Read",
@@ -11,6 +21,24 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/validate-image-read.sh"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/speak-response.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/speak-response.sh"
           }
         ]
       }

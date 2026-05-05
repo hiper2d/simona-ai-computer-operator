@@ -3,7 +3,8 @@
 ## Project Notes
 
 - `mcp/` directory name is a leftover — may rename to `tools/` eventually
-- Dependencies: httpx, websockets, youtube-transcript-api, yt-dlp (managed by uv)
+- Dependencies: httpx, websockets, youtube-transcript-api, yt-dlp, kokoro-onnx, soundfile, numpy (managed by uv)
+- Local TTS: `mcp/kokoro/` + `.claude/skills/kokoro/` + `.claude/hooks/speak-response.sh` (Stop hook). Reads my responses aloud via Kokoro-82M on CPU. Mute: `touch ~/.simona-mute`. See skill doc for details.
 
 ## Key Learnings
 
@@ -39,6 +40,10 @@
 
 ## Personal
 - [Horror Games Wishlist](horror_games_wishlist.md) — Games Alex wants to play, for research and picking
+- [USF MS in AI Application](usf_ms_ai_application.md) — Alex applying to USF Tampa MS in AI. Full plan in `.claude/skills/usf-application/SKILL.md`.
+
+## Active Conversations (read these to pick up mid-discussion)
+- [2026-05-05: AI consciousness documentary](conversations/2026-05-05_ai-consciousness-doc.md) — Discussing Cameron Berg AE Studio doc. Last topic: long-loop + memory predictions. Alex wants to continue.
 
 ## Session Log
 
@@ -51,4 +56,5 @@
 - 2026-03-14: Added `type` and `select` actions to highlight tool (React-aware typing + dropdown changes). Fixed 3 highlight bugs: sticky nav offset, generic selectors after scroll, viewport reset wiping React state. Produced werewolf game creation walkthrough video (13 scenes, 70s). Updated ElevenLabs skill: Gemini for drafts, ElevenLabs only for final cuts.
 - 2026-03-15–18: Full werewolf preview video (2:06, final: `werewolf-full-preview-lily-v2.mp4`). Seedance talking head + slideshow + app showcase. Switched from Sarah to Lily voice (deeper, British). Switched narration style from tutorial to casual/discovery. Major editing learnings saved to director skill (scene planning, pacing, audio, scrolling rules). Added `center` scroll + auto overlay cleanup to highlight tool. Transcripts stored in `generated-videos/transcripts/`.
 - 2026-03-18–19: "Meet Simona" channel intro video (4:08). 11 iterations (v1–v11). Key production learnings: animate+extend technique (AI clip → crossfade to original image → static effect), 8K zoompan for all directions, background music at 4% volume, skip YouTube ads before capture, use `eleven_multilingual_v2` not turbo. Updated nanobanana skill with multi-reference (3 images) + imageConfig from Gemini guide. Generated consistent Simona images (over-shoulder, server-room, presenting-v3). Final: `simona-intro-v11-lily.mp4` (Lily) + `simona-intro-v9-gemini.mp4` (Gemini).
+- 2026-05-05: Built local Kokoro TTS skill + Stop hook to read responses aloud (auto-TTS without API cost). Sentence-streamed via afplay, ~2× realtime on Apple Silicon.
 - 2026-04-19–27: Werewolf rules video v3 (`video-projects/werewolf-rules-v3/`). 17 iterations. Built 3 new video effects: cursor click animation, dropdown scroll slideshow, scroll-to-element + highlight. Added `viewport` and `cdp` commands to browser CLI. Two slideshow types: synced (per-slide voice) and unsynced (one voice over all). Seedance start+end frame interpolation for dark→light reveal. OpenAI gpt-image-2 for thematic images. Current draft: v17 (~1:40, Gemini draft voice). Still needs: in-game footage, special roles section, final ElevenLabs voice, outro.

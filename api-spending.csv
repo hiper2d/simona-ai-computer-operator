@@ -210,3 +210,10 @@ timestamp,service,model,type,description,est_cost_usd
 2026-04-29T02:42:45Z,openai,gpt-image-2,image,werewolf-host-suit-v1,0.17
 2026-04-29T02:51:10Z,openai,gpt-image-2,image,werewolf-host-whiskey,0.17
 2026-04-29T02:51:11Z,openai,gpt-image-2,image,werewolf-host-cards,0.17
+2026-05-05T00:49:30Z,gemini,gemini-3.1-flash-image,image,werewolf-host-table-whiskey-start,0.067
+2026-05-05T00:50:32Z,openai,gpt-image-2,image,werewolf-forest-cards-start,0.13
+2026-05-05T00:50:40Z,openai,gpt-image-2,image,mansion-gates-werewolf-statues-start,0.19
+2026-05-05T01:08:07Z,openai,gpt-image-2,image,werewolf-forest-cards-start,0.13
+2026-05-05T01:08:14Z,openai,gpt-image-2,image,werewolf-forest-cards-end,0.13
+2026-05-05T01:08:17Z,openai,gpt-image-2,image,mansion-passage-mid,0.19
+2026-05-05T01:08:31Z,openai,gpt-image-2,image,mansion-doors-close,0.19
