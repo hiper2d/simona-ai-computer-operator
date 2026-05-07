@@ -34,8 +34,9 @@ def strip_markdown(text: str) -> str:
     text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
     # Headers
     text = re.sub(r"^#+\s+", "", text, flags=re.MULTILINE)
-    # Bold/italic markers
-    text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+    # Bold (lazy, multiline-friendly) — handles **text** spanning newlines
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text, flags=re.DOTALL)
+    # Italic (single * not adjacent to another *)
     text = re.sub(r"(?<!\*)\*(?!\*)([^*\n]+)\*(?!\*)", r"\1", text)
     text = re.sub(r"__([^_]+)__", r"\1", text)
     # List bullets
@@ -45,6 +46,9 @@ def strip_markdown(text: str) -> str:
     text = re.sub(r"^\s*>\s?", "", text, flags=re.MULTILINE)
     # Horizontal rules
     text = re.sub(r"^\s*[-=_]{3,}\s*$", "", text, flags=re.MULTILINE)
+    # Nuke any leftover asterisks (orphan **, malformed pairs, etc.) so Kokoro
+    # doesn't read them as "asterisk asterisk".
+    text = text.replace("*", "")
     # Collapse whitespace
     text = re.sub(r"\s+", " ", text).strip()
     return text

@@ -33,9 +33,12 @@ set -euo pipefail
 ACTIVE_FILE="/tmp/simona-active-session.id"
 
 _kill_audio() {
-  pkill -f "mcp/kokoro/cli.py"     2>/dev/null || true
-  pkill -f "mcp/kokoro/drainer.py" 2>/dev/null || true
-  pkill -x afplay                  2>/dev/null || true
+  # SIGKILL on the Python procs — their main thread is blocked in
+  # subprocess.run(afplay) and a polite SIGTERM loses a race against the
+  # consumer loop popping the next queued sentence.
+  pkill -9 -f "mcp/kokoro/cli.py"     2>/dev/null || true
+  pkill -9 -f "mcp/kokoro/drainer.py" 2>/dev/null || true
+  pkill -x afplay                     2>/dev/null || true
   rm -rf /tmp/simona-queue 2>/dev/null || true
   rm -f  /tmp/simona-drainer.pid /tmp/simona-last-queued.ts 2>/dev/null || true
 }

@@ -25,6 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from cli import _stream_speak  # reuse existing producer/consumer  # noqa: E402
+from tools import strip_markdown  # noqa: E402
 
 QUEUE_DIR = Path("/tmp/simona-queue")
 LOCK = Path("/tmp/simona-drainer.pid")
@@ -86,8 +87,9 @@ def main():
                     f.unlink()
                 except OSError:
                     pass
-                if text.strip():
-                    _stream_speak(text, voice=voice, speed=speed)
+                cleaned = strip_markdown(text)
+                if cleaned.strip():
+                    _stream_speak(cleaned, voice=voice, speed=speed)
                 last_activity = time.time()
             else:
                 if time.time() - last_activity > IDLE_EXIT:
