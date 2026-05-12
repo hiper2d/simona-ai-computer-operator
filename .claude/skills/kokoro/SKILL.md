@@ -98,29 +98,36 @@ If a new turn starts before the previous one finishes speaking, the new hook `pk
 | `release voice`  | Release this session. No one speaks until next claim. Aliases: `silence here`, `stop speaking here`, `unclaim`. |
 | `mute`           | Global mute — silences ALL sessions. Aliases: `shut up`, `be quiet`, `mute yourself`, `simona mute`. |
 | `unmute`         | Lift global mute. (Claim is independent — still need an active claim to actually hear anything.) Aliases: `speak up`, `voice on`, `talk to me`. |
-| `stop talking`   | Kill current playback only — claim and mute state untouched. Aliases: `shush`, `hush`. |
+| `stop`           | Kill current playback only — claim and mute state untouched. Aliases: `stop talking`, `shush`, `hush`. |
+| `pause`          | Suspend playback mid-sentence (SIGSTOP). Aliases: `pause speaking`, `pause talking`, `hold on`, `one second`. |
+| `continue`       | Resume paused playback (SIGCONT). Aliases: `resume`, `keep going`, `continue speaking`, `go on`. |
+| `replay`         | Re-speak the current turn's response (or the previous one if current is empty). Aliases: `repeat`, `say again`, `say that again`, `repeat that`. |
 
 These match the *whole prompt* (after lowercasing + stripping punctuation) so phrases like "let's mute the build output" pass through to the model unchanged.
 
 **Switching speakers:** type `speak here` in another session — the prior speaker's audio is killed cleanly and the new session takes over. Two sessions can't be active simultaneously.
 
-**In shell:**
+**In shell — single `simona` CLI** (sourced from `mcp/kokoro/aliases.sh`):
+
 ```bash
-touch ~/.simona-mute    # mute
-rm ~/.simona-mute       # unmute
-pkill -f kokoro/cli.py ; pkill -x afplay   # stop now
+simona mute        # persistent global mute (touches ~/.simona-mute)
+simona unmute      # lift global mute
+simona stop        # kill current playback (mute/claim untouched)
+simona pause       # SIGSTOP drainer + afplay
+simona continue    # SIGCONT (alias: simona resume)
+simona replay      # re-speak the last response
+simona status      # mute / pause / playing / active session at a glance
+```
+
+Pure stdlib Python — no venv activation. The legacy `simona-mute` / `simona-unmute` / `simona-shutup` aliases are kept as one-line shims to the new subcommands.
+
+```bash
 export SIMONA_VOICE=bf_emma   # change default voice in ~/.zshrc
 ```
 
-Suggested shell aliases (drop in `~/.zshrc`, or `source mcp/kokoro/aliases.sh`):
-```bash
-alias simona-mute='touch ~/.simona-mute && echo muted'
-alias simona-unmute='rm -f ~/.simona-mute && echo unmuted'
-alias simona-shutup='pkill -f kokoro/cli.py 2>/dev/null; pkill -x afplay 2>/dev/null; echo stopped'
-```
+**Replay buffer:** every text block enqueued by `speak-response.sh` is appended to `/tmp/simona-current-text.txt`. When the active session submits a new real prompt, that file is rotated to `/tmp/simona-prev-text.txt` so `simona replay` always plays *something* useful — current turn first, previous turn as fallback.
 
-`simona-mute`/`simona-unmute` toggle the flag file (persistent state).
-`simona-shutup` only kills in-flight playback — future responses still speak.
+**Pause caveat:** if a new turn starts while paused, the kill-on-prompt step in `voice-control.sh` SIGKILLs the paused drainer and the queue is reset (SIGKILL works through SIGSTOP). Pause is intra-turn — survive a sneeze, not a context switch.
 
 ## Markdown stripping
 

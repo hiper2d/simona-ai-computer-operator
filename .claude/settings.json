@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/voice-control.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/voice-control.sh\""
           }
         ]
       }
@@ -20,15 +20,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/validate-image-read.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-image-read.sh\""
           }
         ]
       },
       {
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/speak-response.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-git-in-simona.sh\""
           }
         ]
       }
@@ -38,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/speak-response.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/speak-response.sh\""
           }
         ]
       }

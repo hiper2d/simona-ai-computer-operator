@@ -12,4 +12,8 @@ dependencies = [
     "kokoro-onnx>=0.4.0",
     "soundfile>=0.12.1",
     "numpy>=1.26",
+    "pyyaml>=6.0.3",
+    "croniter>=6.2.2",
+    "python-dotenv>=1.2.2",
+    "requests>=2.32.5",
 ]

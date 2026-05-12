@@ -4,7 +4,7 @@
 
 - `mcp/` directory name is a leftover — may rename to `tools/` eventually
 - Dependencies: httpx, websockets, youtube-transcript-api, yt-dlp, kokoro-onnx, soundfile, numpy (managed by uv)
-- Local TTS: `mcp/kokoro/` + `.claude/skills/kokoro/` + `.claude/hooks/speak-response.sh` (Stop hook). Reads my responses aloud via Kokoro-82M on CPU. Mute: `touch ~/.simona-mute`. See skill doc for details.
+- Local TTS: `mcp/kokoro/` + `.claude/skills/kokoro/` + `.claude/hooks/speak-response.sh` (Stop hook). Reads my responses aloud via Kokoro-82M on CPU. Control via `simona <mute|unmute|stop|pause|continue|replay|status>` (CLI in `mcp/simona/cli.py`, sourced from `mcp/kokoro/aliases.sh`). Same verbs work in chat as whole-prompt phrases via `voice-control.sh`. See skill doc for details.
 
 ## Key Learnings
 

@@ -60,6 +60,8 @@ entries=$(jq -r --arg ts "$marker" '
 
 # Write each new text block to the queue as a sequence-numbered file.
 # Use nanosecond timestamp + monotonic counter for stable ordering.
+# Also append to /tmp/simona-current-text.txt so `simona replay` (and the
+# chat-side "replay" phrase) can re-speak the current turn.
 seq_base=$(date +%s%N)
 i=0
 latest_ts="$marker"
@@ -68,6 +70,7 @@ while IFS=' ' read -r ts b64; do
   text=$(printf '%s' "$b64" | base64 --decode 2>/dev/null || true)
   [ -z "$text" ] && continue
   printf '%s' "$text" > "$QUEUE_DIR/${seq_base}_${i}.txt"
+  printf '%s\n\n' "$text" >> /tmp/simona-current-text.txt
   i=$((i + 1))
   latest_ts="$ts"
 done <<< "$entries"
