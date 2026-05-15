@@ -1,0 +1,12 @@
+{
+  "id": "review_pending_20260512_2053",
+  "parent_task": "review_drafts",
+  "handler": "review_drafts",
+  "context": {},
+  "status": "done",
+  "priority": "normal",
+  "queued_at": "2026-05-12T20:53:52Z",
+  "started_at": "2026-05-12T20:53:52Z",
+  "checkpoint": null,
+  "result": "Reviewed 1 draft: automated-ai-rd-asymmetric-arrival (verdict: minor-edits)"
+}

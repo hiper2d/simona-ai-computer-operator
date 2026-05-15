@@ -1,0 +1,26 @@
+# observe_marlow — daily snapshot + journal of Marlow's evolving state.
+#
+# Fires daily at 12:00 UTC (mid-morning Eastern, after Marlow's overnight
+# work and morning feed scans have settled). Simona reads:
+#   - Marlow's working memory
+#   - Active thread files
+#   - Recent tick logs (last 2 days)
+#   - Latest news digest
+#   - Drafts inventory and review state
+#   - Queue health
+# …and writes a dated observation file to:
+#   memory/observations/marlow/<YYYY-MM-DD>.md
+#
+# Goal: an ongoing journal of how Marlow is developing — voice drift,
+# new threads opening, blind spots, framework concerns Simona thinks
+# Alex should know about. NOT a daily report Marlow already writes
+# herself; Simona's angle is the *meta* — patterns, drift, identity.
+name: observe_marlow
+description: Daily snapshot + observation of Marlow's state.
+schedule: "0 12 * * *"
+priority: normal
+must_run_within_hours: 24
+subtasks:
+  - id: observe_today
+    handler: observe_marlow
+    context: {}

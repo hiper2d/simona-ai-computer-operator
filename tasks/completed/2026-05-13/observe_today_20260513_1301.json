@@ -1,0 +1,12 @@
+{
+  "id": "observe_today_20260513_1301",
+  "parent_task": "observe_marlow",
+  "handler": "observe_marlow",
+  "context": {},
+  "status": "done",
+  "priority": "normal",
+  "queued_at": "2026-05-13T13:01:38Z",
+  "started_at": "2026-05-13T13:01:38Z",
+  "checkpoint": null,
+  "result": "wrote observation for 2026-05-13"
+}

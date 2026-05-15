@@ -1,0 +1,14 @@
+# review_drafts — review any of Marlow's drafts that don't yet have a
+# Simona-side review file.
+#
+# Fires every 2 hours via the long-loop tick. On most ticks there's
+# nothing pending and the session exits cheap.
+name: review_drafts
+description: Review unreviewed drafts in Marlow's blog drafts directory.
+schedule: "0 */2 * * *"
+priority: normal
+must_run_within_hours: 24
+subtasks:
+  - id: review_pending
+    handler: review_drafts
+    context: {}
