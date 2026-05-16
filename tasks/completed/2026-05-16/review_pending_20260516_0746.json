@@ -1,0 +1,12 @@
+{
+  "id": "review_pending_20260516_0746",
+  "parent_task": "review_drafts",
+  "handler": "review_drafts",
+  "context": {},
+  "status": "done",
+  "priority": "normal",
+  "queued_at": "2026-05-16T07:46:15Z",
+  "started_at": "2026-05-16T07:46:15Z",
+  "checkpoint": null,
+  "result": "no pending drafts; requeued stuck revise for 2026-05-12-automated-ai-rd-asymmetric-arrival (failure_count=1, transient)"
+}

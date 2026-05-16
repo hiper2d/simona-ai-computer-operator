@@ -1,0 +1,12 @@
+{
+  "id": "observe_today_20260515_1531",
+  "parent_task": "observe_marlow",
+  "handler": "observe_marlow",
+  "context": {},
+  "status": "failed",
+  "priority": "normal",
+  "queued_at": "2026-05-15T15:31:17Z",
+  "started_at": "2026-05-15T15:31:17Z",
+  "checkpoint": null,
+  "result": "session exited without writing result file"
+}

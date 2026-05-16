@@ -1,0 +1,12 @@
+{
+  "id": "review_pending_20260515_1531",
+  "parent_task": "review_drafts",
+  "handler": "review_drafts",
+  "context": {},
+  "status": "done",
+  "priority": "normal",
+  "queued_at": "2026-05-15T15:31:17Z",
+  "started_at": "2026-05-15T17:38:47Z",
+  "checkpoint": null,
+  "result": "Reviewed v2 of 2026-05-12-automated-ai-rd-asymmetric-arrival \u2014 verdict ship-as-is (terminal, all 6 v1 critiques applied cleanly, no voice erosion). Stuck-loop check requeued a revise on the same slug; the requeue was based on a stale failure (Marlow had completed v2 but the result file write failed). Removed the just-queued revise from Marlow's queue since the verdict supersedes it. Wrote a stub review on the revision-notes.md false-positive picked up by list_pending \u2014 handler bugs (see notes below) need a patch from Alex."
+}
