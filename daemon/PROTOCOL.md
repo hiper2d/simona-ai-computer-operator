@@ -54,24 +54,29 @@ The loop runs Marlow ↔ Simona until one of three things happens. The current d
 
 #### Step-by-step
 
-1. **If the subtask's `context.slug` is set** (on-demand): run `uv run python handlers/review_drafts.py find --slug <slug>`. Exit `failed` if `found: false`. Otherwise treat as a single-item list and proceed.
+1. **Check for stuck revision loops first.** Run `uv run python handlers/review_drafts.py check-stuck`. JSON returns a list of slugs whose most recent `revise_draft` tick failed with no retry queued. For each item:
+   - `action: requeue` → run `queue-revise --slug <slug>` to retry. Stay silent (transient failures like API 529 overloads shouldn't ping Alex). Log the requeue in your tick result text.
+   - `action: escalate` → the slug has failed `revise_draft` more than once. This is no longer transient. Include it in the tick's terminal notify message: `Loop stuck on <slug>: revise has failed <N> times. Last reason: <reason>. Manual intervention needed.`
+   - If `count == 0`, no stuck loops — proceed.
 
-2. **Otherwise** (scheduled tick): run `uv run python handlers/review_drafts.py list-pending`. If `count == 0`, write `{"status": "done", "result": "no pending drafts", "notify": null}` and exit.
+2. **If the subtask's `context.slug` is set** (on-demand): run `uv run python handlers/review_drafts.py find --slug <slug>`. Exit `failed` if `found: false`. Otherwise treat as a single-item list and proceed.
 
-3. For each item in `items`:
+3. **Otherwise** (scheduled tick): run `uv run python handlers/review_drafts.py list-pending`. If `count == 0` AND no stuck loops were found in step 1, write `{"status": "done", "result": "no pending drafts, no stuck loops", "notify": null}` and exit.
+
+4. For each item in `items`:
    - Read the current draft at `draft_path`.
    - If `version > 1`: also read every prior version under `~/projects/marlow/projects/blog/drafts/versions/<slug>/v*.md`, the prior `.simona-review.md` (already at `review_path`, soon to be overwritten — read it first), and any `revision-notes-v*.md` siblings Marlow wrote explaining her choices. For v2+, your job is to assess Marlow's defended/applied changes on their merits — don't just escalate, and don't rubber-stamp. Voice erosion through over-editing is the named failure mode here.
    - Read the relevant thread file(s) at `~/projects/marlow/projects/research/threads/<slug>.md` for arc context.
    - Optionally skim `~/projects/marlow/memory/working.md`.
    - Write a fresh review to `review_path` (overwriting any prior version's review — Marlow archives the prior version of the draft, but the review file is current-version-only).
 
-4. **After writing each review**, apply the loop table above:
+5. **After writing each review**, apply the loop table above:
    - If terminal: build the terminal notify message (see below).
    - If continuing: run `uv run python handlers/review_drafts.py queue-revise --slug <slug>`. Confirm `queued: true` in the output. If `queued: false, reason: already-pending`, that's fine — means a revise was already queued (idempotent).
 
-5. **Notify rules for this tick:**
-   - If you reviewed only continuing drafts → `notify: null`.
-   - If any draft hit a terminal state → send ONE notify with a brief summary of those drafts only.
+6. **Notify rules for this tick:**
+   - If you reviewed only continuing drafts AND no stuck-loop escalations → `notify: null`.
+   - If any draft hit a terminal state OR any slug escalated from check-stuck → send ONE notify combining all of them.
 
 #### Terminal notify format
 

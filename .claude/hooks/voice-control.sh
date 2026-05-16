@@ -7,9 +7,9 @@
 #      speaker is THIS session (so a new turn cleanly interrupts its old one).
 #
 # Recognized phrases (case-insensitive, whole-prompt match after collapsing
-# punctuation to spaces):
+# punctuation to spaces — so "don't" becomes "don t"):
 #
-#   mute / shut up / shutup / be quiet / stay quiet / silence / quiet
+#   mute / shut up / shutup / be quiet / stay quiet / quiet
 #   mute yourself / simona mute / mute simona / simona shut up / shut up simona
 #       -> touch ~/.simona-mute, kill audio, clear queue (global mute)
 #
@@ -18,14 +18,13 @@
 #       -> rm ~/.simona-mute (lifts global mute; claim is independent)
 #
 #   stop talking / shush / hush / stop
-#       -> kill audio + clear queue; also release the claim if THIS session
-#          holds it (so the next turn won't start speaking again). Mute flag
-#          UNTOUCHED. Cross-session claim UNTOUCHED.
+#       -> kill current playback + clear queue ONLY. Claim untouched (next
+#          turn will speak again). Mute flag untouched.
 #
 #   pause / pause speaking / pause talking
 #       -> SIGSTOP drainer + afplay; nothing destroyed, resume with `continue`
 #
-#   continue / resume / keep going / continue speaking
+#   continue / resume / continue speaking
 #       -> SIGCONT drainer + afplay; playback resumes mid-sentence
 #
 #   replay / repeat / say again / say that again / repeat that
@@ -35,8 +34,10 @@
 #   speak here / listen here / voice here / claim voice
 #       -> set this session as the active speaker
 #
-#   release voice / silence here / stop speaking here / unclaim voice
-#       -> clear the active speaker (back to default silent)
+#   silence / don't speak / do not speak / release voice / silence here
+#   stop speaking here / unclaim voice / release / unclaim
+#       -> clear the active speaker if THIS session holds it (back to default
+#          silent for this session). Mute flag untouched.
 #
 # Anything else passes through to the model.
 
@@ -101,7 +102,7 @@ norm=$(printf '%s' "$prompt" \
 flag="$HOME/.simona-mute"
 
 case "$norm" in
-  mute|"shut up"|shutup|"be quiet"|"stay quiet"|silence|quiet \
+  mute|"shut up"|shutup|"be quiet"|"stay quiet"|quiet \
   |"mute yourself"|"simona mute"|"mute simona" \
   |"simona mute yourself"|"mute yourself simona" \
   |"simona shut up"|"shut up simona")
@@ -118,13 +119,7 @@ case "$norm" in
     ;;
   "stop talking"|shush|hush|stop)
     _kill_audio
-    active=$(cat "$ACTIVE_FILE" 2>/dev/null || echo "")
-    if [ -n "$session_id" ] && [ "$session_id" = "$active" ]; then
-      rm -f "$ACTIVE_FILE"
-      echo "Stopped current playback and released voice in this session." >&2
-    else
-      echo "Stopped current playback." >&2
-    fi
+    echo "Stopped current playback. (Claim and mute untouched — next turn will speak.)" >&2
     exit 2
     ;;
   pause|"pause speaking"|"pause talking"|"hold on"|"one second")
@@ -132,7 +127,7 @@ case "$norm" in
     echo "Paused. Say 'continue' to resume." >&2
     exit 2
     ;;
-  continue|resume|"keep going"|"continue speaking"|"continue talking"|"go on")
+  continue|resume|"continue speaking"|"continue talking"|"go on")
     _continue_audio
     echo "Resumed." >&2
     exit 2
@@ -159,7 +154,8 @@ case "$norm" in
     echo "Speaking here. Other sessions stay silent." >&2
     exit 2
     ;;
-  "release voice"|"silence here"|"stop speaking here"|"unclaim voice" \
+  silence|"don t speak"|"dont speak"|"do not speak" \
+  |"release voice"|"silence here"|"stop speaking here"|"unclaim voice" \
   |"stop speaking in this session"|"release"|"unclaim")
     active=$(cat "$ACTIVE_FILE" 2>/dev/null || echo "")
     if [ "$active" = "$session_id" ]; then

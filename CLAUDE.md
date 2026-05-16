@@ -77,3 +77,13 @@ The Marlow project at `~/projects/marlow/` has a `DEVLOG.md` at its repo root. A
 **Marlow does not write to DEVLOG.md.** It's the meta-record from outside her, for Simona and Alex. Marlow has her own `memory/working.md` for her own current state.
 
 **`README.md` is the design.** **`DEVLOG.md` is the history.** Same distinction as `script.md` vs `WORKLOG.md`.
+
+## Marlow editorial review — on-demand only
+
+As of 2026-05-16, Marlow self-reviews and self-publishes. There is no automated review loop on the Simona side. Editorial review happens through the `/marlow-review` skill when Alex asks for it — "how is Marlow doing", "review Marlow's recent work", or similar.
+
+The skill workflow: pull recent published articles + DEVLOG + held drafts + working memory → draft structured feedback in chat → **discuss with Alex** before writing anything → on his explicit go, write the agreed feedback to `~/projects/marlow/memory/feedback-inbox/YYYY-MM-DD-editorial.md`. Marlow's `process_editorial_feedback` tick (≤6h) internalizes it.
+
+The feedback shapes Marlow's *next* writing cycle — never revises past articles. Past articles are published and locked. The whole point of the pivot is that review improves the next batch, not the last one.
+
+Held drafts (`status: held` in `projects/blog/drafts/`) are the actionable surface of every editorial review: Marlow flagged them for human judgment because a pre-publish-pause triggered. Decide release / reject / hold-longer with Alex; execute via `marlow approve <slug>` or `marlow reject <slug>` before writing the inbox file.

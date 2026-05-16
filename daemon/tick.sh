@@ -24,6 +24,7 @@ SESSIONS_LOG="$SIMONA_DIR/sessions.log"
 LOCK_FILE="/tmp/simona-loop.lock"
 SUBTASK_FILE="/tmp/simona-loop-subtask.json"
 RESULT_FILE="/tmp/simona-loop-result.json"
+STREAM_FILE="/tmp/simona-loop-stream.jsonl"
 TICK_TIMEOUT_SEC=420   # 7 min — reviews can be longer than marlow's ticks
 
 mkdir -p "$SIMONA_DIR"
@@ -53,7 +54,7 @@ run_with_timeout() {
 }
 
 cleanup() {
-    rm -f "$LOCK_FILE" "$SUBTASK_FILE" "$RESULT_FILE"
+    rm -f "$LOCK_FILE" "$SUBTASK_FILE" "$RESULT_FILE" "$STREAM_FILE"
 }
 trap cleanup EXIT
 
@@ -96,12 +97,23 @@ rm -f "$RESULT_FILE"
 # long-loop mode rather than interactive mode from the prompt.
 PROMPT="You are Simona running as a long-loop daemon tick rather than an interactive session with Alex. A subtask is queued for you at $SUBTASK_FILE — read it, execute the named handler per the contract in daemon/PROTOCOL.md, write your outcome JSON to $RESULT_FILE before exiting. Do not chat. Do not narrate. Just do the work and exit."
 
-if run_with_timeout "$TICK_TIMEOUT_SEC" claude -p "$PROMPT" >> "$SESSIONS_LOG" 2>&1; then
+# Stream raw JSONL to a temp file so cost.py can extract usage/cost after.
+# Stderr still goes to SESSIONS_LOG for crash diagnostics.
+rm -f "$STREAM_FILE"
+if run_with_timeout "$TICK_TIMEOUT_SEC" claude -p --output-format stream-json --verbose "$PROMPT" >"$STREAM_FILE" 2>>"$SESSIONS_LOG"; then
     log "session exited cleanly"
 else
     rc=$?
     log "session exited with code $rc (124 = timeout)"
 fi
+
+# Log cost record (always — even on crash, so the audit trail is complete).
+uv run python daemon/cost.py log --tick-id "$SUBTASK_ID" --handler "$SUBTASK_HANDLER" < "$STREAM_FILE" || true
+# Extract human-readable assistant text into the session log.
+{
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] === $SUBTASK_ID ($SUBTASK_HANDLER) ==="
+    uv run python daemon/cost.py extract-text < "$STREAM_FILE" || true
+} >> "$SESSIONS_LOG"
 
 if [ ! -f "$RESULT_FILE" ]; then
     log "WARNING: session did not write a result file — marking subtask failed"
