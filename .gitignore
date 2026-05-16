@@ -157,5 +157,6 @@ mcp/kokoro/models/*.onnx
 mcp/kokoro/models/*.bin
 
 # Generated/intermediate media — never commit
+*.mp3
 *.mp4
 *.wav
