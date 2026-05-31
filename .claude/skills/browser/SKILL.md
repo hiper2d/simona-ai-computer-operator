@@ -2,17 +2,29 @@
 name: browser
 description: Browse the web, read pages, click elements, fill forms, and take screenshots using Chrome DevTools Protocol. Use when the user wants to interact with a website, scrape content, or automate browser actions.
 argument-hint: [url] [instructions]
-allowed-tools: Read, Grep, Glob, Bash(uv run python mcp/browser/cli.py *), Bash(curl *)
+allowed-tools: Read, Grep, Glob, Bash(uv run python mcp/browser/cli.py *), Bash(curl *), Bash(bash mcp/browser/start-chrome.sh*), Bash(until curl*)
 ---
 
 Control Chrome browser via CDP: $ARGUMENTS
 
 ## Setup
 
-If Chrome is not running with debugging enabled, tell the user to run:
+If Chrome is not running with debugging enabled, start it yourself. Do **not** ask the user to run the script — they only need to be involved if a site requires login.
+
+The script blocks on Chrome's PID (it traps EXIT and kills Chrome on shutdown), so run it as a background Bash task:
+
+```bash
+# Start Chrome in background (returns immediately, Chrome stays alive)
+bash mcp/browser/start-chrome.sh    # via Bash tool with run_in_background: true
+
+# Then wait for the debug port to come up (also background — fires one notification on success)
+until curl -s http://localhost:9222/json/version >/dev/null 2>&1; do sleep 1; done
 ```
-bash mcp/browser/start-chrome.sh
-```
+
+Notes:
+- The script uses a **temp profile** that copies cookies from your default Chrome profile, so most sites stay logged in. Some sites (banks, brokerages) bind sessions tightly and will still ask for login — that's the one moment you need the user.
+- When you hit a login wall, take a screenshot, tell the user "log in in the Chrome window, then say go," and wait. Don't try to type credentials yourself.
+- Chrome dies when the background task ends (session shutdown or user kill). That's intentional — it cleans up the temp profile.
 
 ## CLI Tools
 
@@ -111,6 +123,17 @@ uv run python mcp/browser/cli.py cleanup --all
 - Use `cleanup --all` to wipe the entire cache, or leave defaults to only remove files older than 24 hours.
 
 ### Error handling
-- If you get a connection error, remind the user to start Chrome: `bash mcp/browser/start-chrome.sh`
+- If you get a connection error to `localhost:9222`, start Chrome yourself (see Setup section). Don't ask the user.
 - If a tab index is out of range, call `tabs` first to show available tabs
 - If a selector matches nothing, try a broader selector or omit it
+
+## Advanced: rich-text editors, React inputs, file uploads (CDP learnings, 2026-05-30)
+
+Hard-won while publishing to Substack (ProseMirror/TipTap editor). Reusable for any modern web app.
+
+- **Inject long rich content into a ProseMirror/TipTap editor:** dispatch a synthetic paste — focus the `[contenteditable]`, then `ed.dispatchEvent(new ClipboardEvent('paste', {clipboardData: dt, bubbles:true}))` where `dt` is a `DataTransfer` with `dt.setData('text/html', html)`. The editor parses the HTML into headings/code/quotes/links. `<img src="https://...">` with **public** URLs gets auto-ingested and re-hosted by the app. Pass big HTML via base64: `decodeURIComponent(escape(atob("<b64>")))`. Encode in bash: `base64 < file.html | tr -d '\n'`.
+- **Gotcha — paste APPENDS image nodes** even when you select-all to replace; text/headings replace fine but images accumulate. For surgical edits to an already-saved doc, **skip the editor**: fetch the app's draft JSON (`/api/v1/drafts/{id}`), mutate the ProseMirror `content` array (e.g. `splice` out dup nodes), and PUT it back. Run async fetches via `cdp "Runtime.evaluate" {expression, awaitPromise:true, returnByValue:true}` (the `js` CLI command does NOT await promises — it returns `{}` for a pending promise).
+- **React-controlled inputs** (`<input>`/`<textarea>`): plain `.value=` won't register. Use the native setter then fire `input`: `Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el),'value').set.call(el,val); el.dispatchEvent(new Event('input',{bubbles:true}))`. Custom widgets (color pickers etc.) often have their own "Save"/commit button — click it after setting.
+- **CDP `Input.insertText`** works on focused native inputs (faithful, triggers React). **CDP `Input.dispatchKeyEvent` (Backspace, etc.) does NOT reliably reach ProseMirror keymaps** — don't rely on it for editor node deletion.
+- **File upload to a hidden `<input type=file>`:** use `DOM.setFileInputFiles` with the input's `objectId`. **objectIds are session-scoped** — they die between separate `cli.py cdp` calls (each reconnects). Do it in ONE connection: write a short script using `mcp/browser/cdp_client.py` (`CDPClient().send(tid, 'Runtime.evaluate', ...)` to get the objectId, then `send(tid, 'DOM.setFileInputFiles', {files:[abs_path], objectId})` on the same client). Pick the target whose `url` matches the page.
+- **Verify, don't trust the UI:** "Saved" badges can be stale. Confirm via the app's API (re-fetch with `cache:'no-store'`) or by curling the live public page.

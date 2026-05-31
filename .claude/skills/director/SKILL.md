@@ -94,20 +94,10 @@ ffmpeg -y -i clip1.mp4 -i clip2.mp4 \
   -map "[v]" -map "[a]" -c:v libx264 -pix_fmt yuv420p -c:a aac -ar 48000 -ac 2 -b:a 192k output.mp4
 ```
 
-**Fade to black** — scene ends with fade out, next scene fades in:
-```bash
-# Add fade out to end of scene
--vf "fade=t=out:st=END_MINUS_1:d=1"
-
-# Add fade in to start of next scene
--vf "fade=t=in:st=0:d=0.5"
-
-# Insert 1s black between them
-ffmpeg -y -f lavfi -i "color=c=black:s=1920x1080:d=1:r=25" \
-  -f lavfi -i "anullsrc=r=48000:cl=stereo" \
-  -c:v libx264 -pix_fmt yuv420p -c:a aac -b:a 192k -t 1 \
-  /tmp/video-assets/black1s.mp4
-```
+**Fade to black** — use for mode-changing transitions (cinematic host scene → instructional chalkboard, or back). Signals "we're shifting registers" to the viewer. See the **Scene-change transition** section in the ffmpeg skill for the full filter chain — key points:
+- Build manually with `fade=out` + `tpad color=black` + `fade=in` + `concat`. Don't use `xfade=fadeblack` — it has no real black hold, only a curve.
+- Use `concat` not `acrossfade` for audio at the boundary. Pad stream 0 audio with silence, delay stream 1 audio so its first words don't start until after the next scene is fully visible.
+- Typical timing: 0.3s fade-out + 0.4s black hold + 0.3s fade-in + 0.3s audio delay = ~1.0s total pause. Use 0.4/0.7/0.4/0.4 for a more deliberate "lights out" break.
 
 **Hard cut** — no transition, just concatenate. Use for fast-paced sequences.
 
@@ -277,3 +267,18 @@ Save scene breakdowns and narration text to `generated-videos/transcripts/` for 
 - **Never overwrite** — save each iteration as a new file
 - Log all paid API calls to `api-spending.csv`
 - Report: file path, duration, file size, scene breakdown
+
+## Chunked rules / instructional video pattern (learned 2026-05-23)
+
+For videos that explain a system of rules (game mechanics, product features, multi-step process), break the instructional middle into sub-chunks (e.g. 3a / 3b / 3c) with one narration block per chunk and multiple visuals per block. This pattern dramatically out-performs slide-per-narration-line:
+
+- **Each chunk is a single conceptual unit** (e.g. 3a: villagers vs werewolves; 3b: day/night phases; 3c: special roles). One concept = one narration recording = several visuals.
+- **Generate the narration first, then map visuals to its silence beats.** Run `silencedetect` on the treated narration to find natural pauses (>0.7s) — those become slide transition points. Building the slideshow against measured beats lands clean pacing on first try; guessing slide durations leads to re-edits.
+- **Insert short host bridges between chunks** (~5-8s talking-head clips) for breathing room between dense sections. The bridge also signals "next topic" without needing a title card.
+- **Get the FULL spec up front before writing narration.** Missing rules surface mid-iteration ("oh wait, the Detective can also kill") and cost a full audio re-gen each time. Read the source-of-truth docs, list every rule, then draft.
+
+Cost discipline: ElevenLabs at ~$0.10/chunk + Seedance r2v at ~$2.12/bridge clip. A 4-bridge structure adds ~$8.50 of audio/video on top of slideshow images. Worth it for production quality; not worth it for drafts (use kokoro + LTX while iterating script).
+
+## Schematic visuals over realistic ones for instructional sections
+
+When the cinematic intro is busy/realistic (gen-AI photoreal characters, lighting drama), the rules-explainer middle often reads better in a **schematic** style. Realistic group shots compete with narration — viewer scans faces instead of absorbing the concept. Schematic chalk-on-slate, woodcut, or silhouette options work and stay gothic-compatible. See `openai-image` skill for a proven gpt-image-2 chalk-on-slate prompt template.

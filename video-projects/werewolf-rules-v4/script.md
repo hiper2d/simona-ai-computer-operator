@@ -62,16 +62,19 @@ Pitch line that drives the app demo: **every major AI plays this game** (Claude,
 |---|-----|--------|-----------|--------|
 | 6 | 8s  | Seedance: `werewolf-host-table-whiskey-start.jpg` | "I'm your host. The rules are simple. There are villagers — and there are werewolves." | Seedance image-to-video silent (host raises glass, looks up to camera), George dub |
 
-### Part 3: Rules slideshow (~38s) — Ken Burns
+### Part 3: Rules slideshow (~42s) — chalk-on-slate, Ken Burns
+
+**Visual style (locked 2026-05-23)**: schematic chalk drawings on an aged dark slate blackboard in a gothic wood frame, warm candlelight from the left, real lit candle visible in frame. Pivoted away from realistic robot-table images — those carried too much detail and competed with the narration. Chalk style reads as "the host explaining the rules at his table" — schematic, low cognitive load, gothic-compatible.
 
 | # | Dur | Visual | Narration | Effect |
 |---|-----|--------|-----------|--------|
-| 7 | 5s  | `werewolf-day-night-split.png` | "By day, villagers vote to kill anyone they suspect of being a werewolf." | Slow horizontal pan |
-| 8 | 5s  | `werewolf-camp-night.png` | "By night, the werewolves choose a villager to eliminate." | Push-in |
-| 9 | 6s  | `werewolf-hidden-wolves.png` | "The catch — werewolves look exactly like villagers. They lie. They strategize. They survive." | Slow zoom |
-| 10 | 6s | NEW — Doctor | "Special roles change everything. The Doctor heals one player each night — they might just save you." | Slow zoom |
-| 11 | 6s | NEW — Detective | "The Detective investigates one player a night and learns who's a werewolf." | Slow zoom |
-| 12 | 6s | NEW — Maniac | "And the Maniac — not a werewolf, but kills like one. Two predators. One win." | Slow zoom |
+| 7 | 4s  | `slideshow-chalk-overview-v1.png` | "Two teams. Villagers, and werewolves." | Static / very subtle push-in — first chalk slide should let the eye absorb the new style |
+| 8 | 5s  | `slideshow-chalk-day-vote-v1.png` (top-down) | "By day, villagers vote to kill anyone they suspect of being a werewolf." | Slow horizontal pan |
+| 9 | 5s  | `slideshow-chalk-night-hunt-v1.png` | "By night, the werewolves choose a villager to eliminate." | Push-in |
+| 10 | 6s | `slideshow-chalk-hidden-wolves-v1.png` | "The catch — werewolves look exactly like villagers. They lie. They strategize. They survive." | Slow zoom |
+| 11 | 6s | `slideshow-chalk-doctor-v1.png` | "Special roles change everything. The Doctor heals one player each night — they might just save you." | Slow zoom |
+| 12 | 6s | `slideshow-chalk-detective-v1.png` | "The Detective investigates one player a night and learns who's a werewolf." | Slow zoom |
+| 13 | 6s | `slideshow-chalk-maniac-v2.png` (abducts, not kills) | "And the Maniac — not a werewolf. Doesn't kill — abducts. A different predator. One win." | Slow zoom |
 
 ### Part 4: Live app demo (~42s) — browser capture (aiwerewolf.net)
 
@@ -104,10 +107,10 @@ Reuse browser/highlight/cursor tooling from v3.
 |------|----------|
 | 1. Intro arc | ~27s |
 | 2. Host welcome | ~8s |
-| 3. Rules slideshow | ~34s |
+| 3. Rules slideshow | ~38s (7 chalk slides) |
 | 4. App demo | ~42s |
 | 5. Outro | ~6s |
-| **Total** | **~1:57** |
+| **Total** | **~2:01** |
 
 Slack: ~10-15s of breathing room available before hitting 2:15.
 

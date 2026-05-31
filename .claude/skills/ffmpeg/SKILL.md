@@ -331,6 +331,66 @@ ffmpeg -y -f concat -safe 0 -i concat.txt -i narration.wav \
 rm clip*.mp4 concat.txt
 ```
 
+### Multi-chunk assembly pitfalls (learned the hard way 2026-05-23)
+
+When chaining many xfades to assemble a multi-part video, two silent failures cost real iteration time. Both are easy to catch up front:
+
+**Pitfall 1: format duration ≠ video stream duration in source chunks**
+
+If any input chunk has `format=duration` longer than `stream=duration` (video), the xfade chain will silently truncate downstream. Common cause: using `-t N` on an output where the actual scene frames sum to less than N — the muxer pads format duration without adding frames.
+
+```bash
+# Always verify BEFORE chaining xfades. If video < audio, downstream xfade breaks.
+for f in chunk*.mp4; do
+  FMT=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$f")
+  VID=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of csv=p=0 "$f")
+  AUD=$(ffprobe -v error -select_streams a:0 -show_entries stream=duration -of csv=p=0 "$f")
+  printf "%-40s fmt=%s vid=%s aud=%s\n" "$f" "$FMT" "$VID" "$AUD"
+done
+```
+
+**Fix for small mismatches (<0.5s)**: add `tpad` in the assembly filter to clone the last video frame across the gap. No re-encoding the source chunk needed:
+
+```
+[N:v]tpad=stop_mode=clone:stop_duration=0.2[vN]
+```
+
+**Fix for large mismatches**: rebuild the source chunk. Don't use `-t` to pad — use scene durations that actually sum to the audio length.
+
+**Pitfall 2: timebase mismatch after `concat` filter**
+
+`concat` produces output with timebase `1/1000000`. Subsequent `xfade` expects matching timebases — typically `1/12800` for project clips. You get `First input link main timebase (1/1000000) do not match the corresponding second input link xfade timebase (1/12800)` and the encoder never opens.
+
+**Fix**: append `fps=25,settb=1/12800` after any concat that feeds into xfade:
+
+```
+[v0][v1]concat=n=2:v=1:a=0,fps=25,settb=1/12800[v01]
+[v01][2:v]xfade=transition=fade:duration=0.4:offset=...[v012]
+```
+
+### Scene-change transition (cinematic → instructional or vice versa)
+
+For mode-changing transitions (e.g. host scene → chalkboard slideshow), `xfade=fadeblack` doesn't give a real black hold — it's all curve, the midpoint is one frame. For an actual "lights out, lights on" beat with definite black, build it manually:
+
+```
+# Stream 0 fades to black, then holds black, then stream 1 fades in from black
+[0:v]fade=t=out:st=END_MINUS_FADEDUR:d=0.3[v0a]
+[v0a]tpad=stop_mode=add:stop_duration=0.4:color=black[v0]   # 0.4s pure black hold
+[1:v]tpad=start_mode=clone:start_duration=0.3[v1a]           # held first frame...
+[v1a]fade=t=in:st=0:d=0.3[v1]                                # ...that fades in from black
+[v0][v1]concat=n=2:v=1:a=0,fps=25,settb=1/12800[v01]
+
+# Audio: pad stream 0 with silence to match the visual extension, delay stream 1
+# so its first words don't start until after the chalk is fully visible
+[0:a]apad=pad_dur=0.4,atrim=duration=NEW_END[a0]
+[1:a]adelay=300|300[a1]
+[a0][a1]concat=n=2:v=0:a=1[a01]
+```
+
+**Critical:** do NOT use `acrossfade` at this boundary. acrossfade overlaps both audio streams during the crossfade window, so the second stream's narration starts at the BEGINNING of the visual transition — words audible while the previous scene fades to black. Use `concat` with silence padding instead, so audio is genuinely silent during the black hold.
+
+Tune the four numbers (fade-out, black hold, fade-in, audio delay) together. Typical range: 0.3/0.4/0.3/0.3 (quick), 0.4/0.7/0.4/0.4 (deliberate scene break).
+
 ### No effect (static)
 
 For code walkthroughs or text-heavy content where motion would distract:

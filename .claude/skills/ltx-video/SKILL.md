@@ -11,6 +11,16 @@ Generate video with LTX: $ARGUMENTS
 
 Uses the LTX Video API to generate videos from images. The API is **synchronous** — it returns the MP4 directly in the response (no polling). Supports image-to-video with AI-generated audio.
 
+## When to use LTX vs Seedance
+
+LTX is the **draft / prototyping** tool. It generates its own voice and locks lip motion to it — there is no way to supply a custom voice file. Good for:
+- Quickly testing whether a motion concept, framing, or character expression works before paying for an r2v render
+- Cheap iteration on prompts ($0.04/s vs $0.30/s for Seedance r2v)
+
+For final / locked talking-head shots where the voice must match a specific character (e.g., a George ElevenLabs dub used elsewhere in the project), use **Seedance reference-to-video** (`bytedance/seedance-2.0/reference-to-video`) — that endpoint accepts both image and voice sample and lip-syncs to your provided audio. See `.claude/skills/seedance/`.
+
+**Don't try to swap LTX's voice for a different one with lip-sync models** (`fal-ai/sync-lipsync`, `latentsync`) — they fail on stylized / non-human faces (verified 2026-05-19 on werewolf-host). If LTX's voice isn't acceptable for the final, re-shoot with Seedance r2v.
+
 ## Models
 
 | Model | ID | Quality | Cost (1080p) | Cost (1440p) | Cost (4K) |

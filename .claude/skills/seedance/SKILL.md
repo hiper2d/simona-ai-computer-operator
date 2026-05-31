@@ -15,11 +15,22 @@ Uses the fal.ai queue API to generate videos with Seedance 2.0 (ByteDance). Supp
 
 | Model | ID | Aspect Ratios | Duration |
 |-------|----|---------------|----------|
-| **2.0** | `bytedance/seedance-2.0/image-to-video` | auto, 21:9, 16:9, 4:3, 1:1, 3:4, 9:16 | 4-15s |
+| **2.0 i2v** | `bytedance/seedance-2.0/image-to-video` | auto, 21:9, 16:9, 4:3, 1:1, 3:4, 9:16 | 4-15s |
+| **2.0 r2v** | `bytedance/seedance-2.0/reference-to-video` | same | 4-15s |
 
-**IMPORTANT**: endpoint does NOT use `fal-ai/` prefix — just `bytedance/seedance-2.0/image-to-video`.
+**IMPORTANT**: endpoints do NOT use `fal-ai/` prefix — just `bytedance/seedance-2.0/...`.
 
-Pricing: $0.014 per 1,000 tokens. Token formula: `(height x width x 24 x duration) / 1024`.
+## Picking the right endpoint
+
+- **Talking head / character speaking a known line** → **r2v** with the dialogue WAV as `audio_urls`. The model lip-syncs to your audio and largely preserves voice character + timing. Use `@Image1` and `@Audio1` references inside the prompt so the model binds them. This is the only reliable path for "make this character say *these exact words in this exact voice*."
+- **Silent motion / cinematic clip** → **i2v** with `generate_audio=false`. Use when you'll dub a voiceover later (no lip sync needed) — Part 1 host-reveal pattern.
+- **Native voice OK** → **i2v** with `generate_audio=true`. Cheapest path but you get Seedance's voice, not yours.
+
+**Don't try lip-sync-swap models** (`fal-ai/sync-lipsync`, `latentsync`, etc.) to retrofit a different voice onto a Seedance i2v video — they're trained on human faces and produce mushy/glitchy mouth motion on stylized or non-human characters (wolf, robot, creature). Verified failure 2026-05-19 on werewolf-host. r2v is the right tool.
+
+**Use LTX-2.3 fast for cheap *drafts* only.** It generates its own voice and locks lip sync to it — you can't supply a custom voice. Good for quickly testing whether motion / framing works before committing to an r2v render. See `.claude/skills/ltx-video/`.
+
+Pricing: $0.014 per 1,000 tokens. Token formula: `(height x width x 24 x duration) / 1024`. r2v has the same per-token pricing as i2v.
 
 | Resolution | 5s cost | 10s cost |
 |------------|---------|----------|
@@ -88,6 +99,31 @@ echo "Submitted: $REQUEST_ID"
 ```
 
 If end frame is provided, add `"end_image_url": "'"$END_FILE_URL"'"` to the payload.
+
+### Reference-to-video (talking head) payload
+
+For r2v, upload the dialogue WAV the same way as the image (`content_type: audio/wav`), then:
+
+```bash
+curl -s -X POST "https://queue.fal.run/bytedance/seedance-2.0/reference-to-video" \
+  -H "Authorization: Key ${FAL_K}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image_urls": ["'"$IMAGE_FILE_URL"'"],
+    "audio_urls": ["'"$AUDIO_FILE_URL"'"],
+    "prompt": "The character from @Image1 speaks the dialogue from @Audio1 with synchronized lip movement matching every word and pause. Preserve the exact voice character and timing of @Audio1. <SCENE/MOTION DESCRIPTION HERE>.",
+    "duration": "7",
+    "resolution": "720p",
+    "aspect_ratio": "16:9",
+    "generate_audio": true
+  }'
+```
+
+**Critical schema notes:**
+- Use **plural array** params: `image_urls`, `audio_urls`. Singular `audio_url` is silently ignored — the model will regenerate its own voice and you'll wonder why your audio didn't lock in.
+- Reference assets in the prompt via `@Image1`, `@Audio1` so the model binds them to instructions.
+- Set `duration` to roughly the audio length (rounded up; min 4s, valid integer seconds). Too-long duration causes the model to extrapolate extra speech.
+- The output audio is baked into the returned MP4 — extract or use as-is. r2v output sample rate is often 44.1kHz; re-encode to 48kHz to match the rest of your project pipeline.
 
 5. Poll for completion (typically 2-3 min):
 

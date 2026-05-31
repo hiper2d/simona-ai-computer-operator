@@ -496,12 +496,486 @@ Slight zoom bumps for scenes 3 and 4 (1.15 → 1.18) add visible motion, making 
 
 ---
 
-## TODO (next steps in production order)
+## Gap — v3 and v4 iterations not logged
 
-1. Regenerate the 5 missing intro images (forest cards x3, mansion gates, mansion passage). Fresh prompts — no record of original prompts.
-2. Generate 3 role images (Doctor, Detective, Maniac) — OpenAI gpt-image-2.
-3. Finalize narration text → ElevenLabs George (final voice) → measure timings.
-4. Generate 2 remaining Seedance clips (forest interpolation, host welcome ~8s).
-5. Build Ken Burns slideshow segments.
-6. Capture app demo on aiwerewolf.net.
-7. Assemble final cut.
+Between 2026-05-10 (v2) and 2026-05-19, Part 1 went through v3 and v4 without WORKLOG entries. Artifacts that exist on disk: `clips/part1-v{3,4}.mp4`, `clips/kenburns_v{3,4}/`, `audio/part1-narration-v{3,4}.wav`, `audio/raw/scene1_slow.mp3`, `audio/processed/scene1_slow.wav`, `clips/host-reveal-r2v-v1.mp4` (likely a reference-to-video re-roll of scene1). Prompts/params for these changes are not recorded — would need to be reverse-engineered from the files if reproducibility matters.
+
+---
+
+## 2026-05-19 — Part 1 v5 (faster mansion approach, scene-1-only voice)
+
+Goal: tighten the Ken Burns slideshow (scenes 3, 4, 5) and drop all narration except the scene-1 host-reveal line. No transcript rewrite this round — that comes next.
+
+### [<time>] ken-burns-v5-rebuild (scenes 3, 4, 5 at 2s each)
+
+- **Tool**: ffmpeg (same anti-shake recipe as v2 — 8K prescale → 4K zoompan → 1080 lanczos)
+- **Per scene**:
+
+| Scene | Image | Dur | z_end | Output |
+|-------|-------|-----|-------|--------|
+| 3 | mansion-gates-werewolf-statues-start.png | 2s | 1.18 | clips/kenburns_v5/scene3.mp4 |
+| 4 | mansion-passage-mid.png | 2s | 1.18 | clips/kenburns_v5/scene4.mp4 |
+| 5 | mansion-doors-composited-feathered.png | 2s | 1.4 (unchanged — frame-perfect seam to 5b) | clips/kenburns_v5/scene5.mp4 |
+
+- **Cost**: $0
+- **Notes**: scenes 1, 2, 5b reused from `kenburns_v4/` (no change).
+
+### [<time>] build-narration-v5 (scene-1 voice only, rest silent)
+
+- **Inputs**: `audio/part1-narration-v4.wav` (29.76s; first speech segment runs 0–7.08s per silencedetect at -40dB)
+- **Method**: `atrim=0:7.08` → `afade=t=out:st=6.58:d=0.5` → amix over 22.76s anullsrc base, `normalize=0`
+- **Output**: `audio/part1-narration-v5.wav` (22.76s, 48kHz stereo)
+- **Notes**: Preserves the existing v4 scene-1 narration verbatim (no transcript change yet). Everything from 7.08s onward is silence.
+
+### [<time>] assemble-part1-v5
+
+- **Concat** (hard, no transitions): scene1 (6.92s) + scene2 (4.92s) + scene3 (2s) + scene4 (2s) + scene5 (2s) + scene5b (4.92s) = **22.76s**
+- **Mux**: video copy + AAC 192k @ 48kHz stereo
+- **Output**: `clips/part1-v5.mp4` (~21MB, 1920x1080@25fps)
+- **Cost**: $0
+
+### Open for next round
+
+- Rewrite narration transcript (Alex flagged audio doesn't land — full rewrite, not tweaks)
+- Decide whether shortened mansion approach reads as urgency or rush — review the cut
+
+---
+
+## 2026-05-19 — Part 1 v6–v12 (narration iteration, mostly kokoro)
+
+Conversational iteration with Alex on the narration. Not every prototype is its own entry — this block summarizes the script evolution. Locked outcome shipped as v13.
+
+### What we tried (all on the same v5 video)
+
+- **v6**: kokoro `bm_george` at speed 1.0, sparse punctuation. Script: "A social deduction game. Two teams: villagers, and werewolves..." 12.2s treated → ~3.6s tail silence.
+- **v6b / v6c**: same script, slower kokoro speed + ellipses for dramatic beats. v6c (speed 0.85) fit 15.5s exactly. Alex liked the kokoro voice; flagged that ellipses-as-pause kokoro produces feels flat (and would be far better on ElevenLabs).
+- **v7 / v7b / v7c**: longer script with "Only the wolves know each other — but they're outnumbered" appended. Ran 16–19s — overran the 15.84s budget. v7c was kokoro at native speed 1.1 to fit.
+- **v8**: trimmed script ("Pick a card to know your destiny..."), kokoro at 1.0. Fit cleanly at 15.07s. Alex flagged abrupt transition off "Welcome to AI Werewolf" — there was no real pause; the new audio overlapped scene 1's fade-out.
+- **v9 / v9b**: Alex-authored rewrite — "Two teams, one goal: eliminate the other. Through voting, deception, alliances, and betrayal." v9 fit comfortably (12.1s, 3s tail). v9b added asymmetry beat → ran over.
+- **v10**: tried adding kokoro ellipses to fill v9's tail. Sounded "weird" — kokoro doesn't theatricalize ellipses, just inserts dead silence. Confirmed we need real prosody.
+
+### Key learnings from this round
+
+- **kokoro is a script-prototyping tool only.** It measures word count vs duration well, but its pause/prosody control is limited to `--speed` and punctuation, with very flat results on ellipses. For final delivery, ElevenLabs George with SSML `<break>` tags is the right tool.
+- **Pitch-down treatment slows audio ~18%.** `asetrate=44100*0.85` is the locked George character treatment; budget calculations must include this multiplier.
+- **Locked Part 1 transcript** (after "Welcome to AI Werewolf"): "Pick a card to know your destiny — villager, or werewolf. Two teams, one goal: eliminate the other. Through voting, deception, alliances, and betrayal."
+
+---
+
+## 2026-05-19 — Part 1 v11/v12 (ElevenLabs George + loudness normalization)
+
+### [time] elevenlabs-george-generation
+
+- **Tool**: ElevenLabs `eleven_multilingual_v2`, voice George (`JBFqnCBsd6RMkjVDRZzb`), settings `stability=0.5, similarity_boost=0.75, style=0.5` (matches v2 locked config)
+- **SSML**:
+  > Pick a card to know your destiny. `<break time="0.5s"/>` Villager, or werewolf. `<break time="0.6s"/>` Two teams, one goal — eliminate the other. `<break time="0.4s"/>` Through voting, deception, alliances, and betrayal.
+- **Outputs**:
+  - `audio/elevenlabs_raw/narration-v11.mp3` — raw 11.33s
+  - `audio/elevenlabs_raw/narration-v11-treated.wav` — pitch-down + echo treated, 13.37s, 48kHz stereo
+  - `audio/elevenlabs_raw/scene1-welcome.mp3` + treated — fresh George read of "Welcome to AI Werewolf" (NOT used in final — kept for re-roll if needed)
+- **Cost**: ~$0.06 ElevenLabs (logged to `api-spending.csv`)
+
+### [time] loudness-normalization (v12)
+
+Initial mix (v11) used a freshly generated scene-1 line. Alex feedback: keep the **original v4 scene-1 audio** (it works as-is) and just match the new narration's loudness to it.
+
+- **Measurements**:
+  - v4 scene 1 (0–7.08s): Integrated −20.5 LUFS, Peak −3.3 dBTP
+  - New narration (treated): Integrated −25.1 LUFS, Peak −10.0 dBTP — ~4.6 LU quieter
+- **Filter**: `loudnorm=I=-20.5:TP=-3.3:LRA=11:linear=true`
+- **Output**: `audio/elevenlabs_raw/narration-v11-normalized.wav` — Integrated −20.6 LUFS (0.1 LU off target), Peak −4.4 dBTP
+- **Notes**: Single-pass linear loudnorm — sufficient for matching. Two-pass would tighten peak by another ~1 dB but the gain isn't worth the complexity here.
+
+---
+
+## 2026-05-19 — Part 1 v13 (LOCKED) — slideshow speed-up + crossfade + final mix
+
+### What changed from v12
+
+1. **Slideshow scenes 3/4/5 trimmed to 1.5s each** (rendered as 1.48s = 37 frames @ 25fps). Was 2s in v5. Faster mansion approach matches narration pacing and removes ~1.5s of tail silence.
+2. **0.5s dissolve crossfade between scene 2 (cards fan) and scene 3 (mansion gates)** — softens the otherwise-abrupt visual jump from gloved-hands-in-forest to wide mansion shot.
+3. Total length: **20.72s** (was 22.76s in v5/v11/v12).
+
+### [time] ken-burns-v6-rebuild (scenes 3, 4, 5 at 1.5s each)
+
+Same anti-shake recipe as v2/v5 — 8K prescale → 4K zoompan → 1080 lanczos.
+
+| Scene | Image | Dur | z_end | Output |
+|-------|-------|-----|-------|--------|
+| 3 | mansion-gates-werewolf-statues-start.png | 1.48s | 1.18 | clips/kenburns_v6/scene3.mp4 |
+| 4 | mansion-passage-mid.png | 1.48s | 1.18 | clips/kenburns_v6/scene4.mp4 |
+| 5 | mansion-doors-composited-feathered.png | 1.48s | 1.4 (frame-perfect seam to 5b unchanged) | clips/kenburns_v6/scene5.mp4 |
+
+### [time] assemble-part1-v13 (xfade build)
+
+- **Filter chain**:
+  ```
+  [scene1][scene2]concat=n=2[firstpair];
+  [scene3][scene4][scene5][scene5b]concat=n=4[secondpart];
+  [firstpair][secondpart]xfade=transition=fade:duration=0.5:offset=11.34,format=yuv420p[vout]
+  ```
+- **Output (video-only)**: `clips/part1-v13-video-only.mp4` — 20.72s, 1920x1080@25fps, H.264 yuv420p crf=18
+
+### [time] final-mix (v13 audio)
+
+- **Tracks**:
+  - Scene 1 audio: `audio/part1-narration-v4.wav` atrim 0:7.08 (original v4 mix, untouched)
+  - New narration: `audio/elevenlabs_raw/narration-v11-normalized.wav` (loudness-matched)
+  - Silent 48kHz stereo base via anullsrc
+- **Layout**: scene 1 placed at t=0; new narration `adelay=7350|7350` (lands at 7.35s, ends ~20.7s)
+- **Output**: `audio/part1-narration-v13.wav`
+- **Mux**: video copy + AAC 192k → `clips/part1-v13-locked.mp4`
+
+### Locked artifacts
+
+- **Final Part 1**: `clips/part1-v13-locked.mp4` (20.72s)
+- **Building blocks** (kept for re-edit):
+  - `clips/kenburns_v4/{scene1,scene2,scene5b}.mp4` — Seedance reused
+  - `clips/kenburns_v6/{scene3,scene4,scene5}.mp4` — Ken Burns mansion approach
+  - `clips/{corridor-entry-v1,forest-cards-fan-v1,host-reveal-v1,host-reveal-v2}.mp4` — original Seedance sources
+  - `audio/elevenlabs_raw/{narration-v11.mp3,narration-v11-treated.wav,narration-v11-normalized.wav,scene1-welcome.mp3,scene1-welcome-treated.wav}`
+  - `audio/part1-narration-v4.wav` — needed to extract scene 1 audio if rebuilding
+  - `audio/part1-narration-v13.wav` — final mix
+- **Locked transcript**:
+  > "Welcome to AI Werewolf. [pause] Pick a card to know your destiny — villager, or werewolf. Two teams, one goal: eliminate the other. Through voting, deception, alliances, and betrayal."
+
+### Cleanup (2026-05-19)
+
+Moved superseded test artifacts to `_archive/` (reversible, not deleted):
+
+- `_archive/clips/`: `corridor_{start,mid,end}.jpg`, `host-reveal-r2v-v1.mp4`, `kenburns_v1`, `kenburns_v2`, `kenburns_v3`, `kenburns_v5`, all `part1-v{1..12}*.mp4` intermediates and kokoro/EL test renders
+- `_archive/audio/raw/`, `_archive/audio/processed/`: predate ElevenLabs final, kokoro intermediates
+- `_archive/audio/`: all `part1-narration-v{2,3,5..12}.wav` intermediate mixes
+
+---
+
+## 2026-05-19 — Part 2 kick-off
+
+Goal: ~8s host welcome — Seedance image-to-video from the host-table image, George narration.
+
+### [time] part2-narration-generation
+
+- **Script**: "I'm your host. `<break time="0.5s"/>` And yet... I might eat you. `<break time="0.8s"/>` But first, let me explain the rules."
+- **Tool**: ElevenLabs `eleven_multilingual_v2`, voice George, same settings as Part 1
+- **Output**: `audio/elevenlabs_raw/part2-host-welcome.mp3` (5.90s raw) → `part2-host-welcome-treated.wav` (6.98s pitch-down + echo)
+- **Cost**: ~$0.04 ElevenLabs
+
+### [time] part2-seedance-submit
+
+- **Input**: `images/werewolf-host-table-whiskey-start.jpg` (2752x1536 JPEG)
+- **Tool**: Seedance 2.0 image-to-video via fal.ai queue
+- **Params**: `duration=8`, `resolution=720p`, `aspect_ratio=16:9`, `generate_audio=false`
+- **Prompt** (verbatim):
+  > The werewolf-headed host sits at the candlelit mahogany table. He looks up directly into the camera, intense yellow eyes locking with the viewer. He grasps the crystal whiskey tumbler, raises it slightly in a knowing, sardonic toast, then sets it back down. His lips curl into a faint, predatory smile revealing a hint of sharp teeth. Deliberate, calm, unsettling. Candle flames flicker softly. No cuts. Cinematic, gothic, slow.
+- **fal upload URL** (may expire): `https://v3b.fal.media/files/b/0a9addff/u1EBgZS9-kFdpF1pfMn0Q_werewolf-host-table-whiskey-start.jpg`
+- **Request ID**: `019e417f-c8c2-7ba0-8535-c095188833c4`
+- **Status URL**: `https://queue.fal.run/bytedance/seedance-2.0/requests/019e417f-c8c2-7ba0-8535-c095188833c4`
+- **Expected cost**: ~$2.40 (8s @ 720p)
+
+### Part 2 iteration trail (what worked, what didn't)
+
+Part 2 went through several aborted approaches before locking. Recording the *failure modes* so we don't repeat them:
+
+1. **Seedance i2v, silent, George dub** (`part2-host-welcome-v1.mp4`) — host raises glass + sly grin, no talking. Cost $2.42. Alex rejected: wanted the host to actually speak.
+2. **LTX-2.3 fast** (`part2-ltx-v1.mp4`) — talking head with LTX's native AI voice. Cost $0.32. Pacing was better than Seedance i2v, but LTX cannot accept a custom voice and its voice clashed with George.
+3. **Seedance i2v with `generate_audio=true`** (`part2-seedance-talking-v1.mp4`) — host talks with Seedance's own voice, real lip sync. Cost $2.12. Mouth motion good but wrong voice.
+4. **Dub George over Seedance talking visual** (`part2-v2.mp4`, `part2-v3.mp4`) — strip Seedance audio, mux normalized George. Lip sync broken because mouth motion was locked to Seedance's syllables, not George's. **Don't do this — naive audio swap on a video with existing mouth motion never works.**
+5. **fal-ai/sync-lipsync swap** (`part2-lipsync-v1.mp4`) — feed the Seedance talking visual + George WAV to a lip-sync model. Cost $0.10. Mushy/glitchy mouth — sync-1 is trained on human faces and the wolf snout is out of distribution. **Lip-sync-swap models are unreliable on stylized/non-human characters; don't try this route on creature characters.**
+6. **Seedance r2v with wrong schema** (`part2-r2v-v1.mp4`) — submitted `audio_url` (singular), which the model silently ignored. Got back a 10.1s video with a fully synthesized different voice. Cost $2.12 wasted.
+7. **Seedance r2v with correct schema** (`part2-v-locked.mp4`) — `image_urls` + `audio_urls` (plural arrays) + explicit `@Image1`/`@Audio1` references in the prompt. Lip-syncs to the supplied George audio with the wolf-host visual. Cost $2.12. **Locked.**
+
+### [time] part2-r2v-locked-build
+
+- **Endpoint**: `bytedance/seedance-2.0/reference-to-video` (NOT image-to-video)
+- **Inputs**:
+  - `image_urls`: [host table image fal URL]
+  - `audio_urls`: [George "yes" treated+normalized WAV fal URL]
+- **Prompt** (verbatim, with @ asset references):
+  > The werewolf-headed host from @Image1 speaks the dialogue from @Audio1 with synchronized lip movement matching every word and pause exactly. Preserve the exact voice character, timing, and pauses from @Audio1 — do not regenerate the voice. He sits at the candlelit mahogany table with a crystal whiskey tumbler. Calm, relaxed, conversational manner — never threatening, never menacing. Candle flames flicker softly in the background. Cinematic, intimate, gothic.
+- **Params**: `duration=7`, `resolution=720p`, `aspect_ratio=16:9`, `generate_audio=true`
+- **Request ID**: `019e432b-378e-75c0-bdcc-394a2302b331`
+- **Output URL** (may expire): `https://v3b.fal.media/files/b/0a9ae90b/hpcPnNCVLQlpNLoVzNYzt_video.mp4`
+- **Raw output**: 7.08s, 1280x720, 24fps, 44.1kHz AAC. Three speech segments with natural mid-pauses (silencedetect confirmed at 0.5s and 0.8s).
+- **Conversion to project spec**: `fps=25,scale=1920:1080:flags=lanczos` + audio `loudnorm=I=-20.5:TP=-3.3:LRA=11:linear=true,aformat=sample_rates=48000:channel_layouts=stereo` + AAC 192k @ 48kHz. Final: 7.10s, 1920x1080, 25fps, 48kHz AAC.
+- **Output**: `clips/part2-v-locked.mp4`
+- **Cost**: $2.12 (logged)
+- **Seed**: `193628540`
+
+### Locked transcript (Part 2)
+
+> "I'm your host. [0.3s break] And yes, I might eat you. [0.4s break] But first, let me explain the rules."
+
+Audio source: `audio/elevenlabs_raw/part2-host-welcome-fix.mp3` → `part2-host-welcome-fix-normalized.wav` (treated with `asetrate=44100*0.85,aresample=44100,aecho=0.8:0.7:40:0.3,aresample=48000` then loudnorm to −20.5 LUFS to match Part 1).
+
+---
+
+## 2026-05-19 — Combined Parts 1+2 lock
+
+### [time] assemble-parts1-2
+
+Combined Part 1 (20.72s) + Part 2 (7.10s) with a 0.4s crossfade at the seam. Rationale for crossfade: Part 1 ends on the corridor with warm doorway light, Part 2 opens on the candlelit host room — both warm-orange palettes. Fade reads as "stepping through the door."
+
+- **Filter**:
+  ```
+  [0:v][1:v]xfade=transition=fade:duration=0.4:offset=20.32,format=yuv420p[vout]
+  [0:a][1:a]acrossfade=d=0.4[aout]
+  ```
+- **Output**: `clips/parts1-2-locked.mp4` — 27.42s, 1920x1080@25fps, AAC 48kHz stereo
+
+### Cleanup (Part 2 round, 2026-05-19)
+
+Moved to `_archive/`:
+- `clips/part2-{v1,v1-video-only,v2,v2-video-only,v3,seedance-talking-v1,ltx-v1,lipsync-v1,r2v-v1,r2v-v1-spec,host-welcome-v1}.mp4`, `part2-r2v-v2.mp4` (raw before spec conversion)
+- `audio/elevenlabs_raw/part2-host-welcome.{mp3,treated.wav,normalized.wav}` (the "yet" version, superseded by "yes")
+- `audio/part2-narration-v{1,2,3}.wav` (intermediate mixes)
+
+Surviving Part 2 building blocks:
+- `clips/part2-v-locked.mp4` — final
+- `audio/elevenlabs_raw/part2-host-welcome-fix.{mp3,_normalized.wav}` — George "yes" source + treated/normalized
+
+---
+
+## 2026-05-19 — Skill updates
+
+Documented r2v + lip-sync findings in the production tooling:
+- `.claude/skills/seedance/SKILL.md` — added r2v endpoint, plural-array schema (`image_urls`, `audio_urls`), `@Image1`/`@Audio1` prompt references, and a "Picking the right endpoint" decision section. Includes explicit warning that singular `audio_url` is silently ignored.
+- `.claude/skills/ltx-video/SKILL.md` — added "When to use LTX vs Seedance" — LTX is drafts only, can't accept custom voice; Seedance r2v is the locked-voice path.
+- Both skills now warn against `fal-ai/sync-lipsync` / `latentsync` for non-human / stylized faces.
+
+---
+
+## 2026-05-23 — Part 3 visual pivot: chalk-on-slate schematic slideshow
+
+**Why the pivot**: prior Part 3 iterations were ultra-realistic ("AI bots around a table with a human", `slideshow-1-friendly-v{1,2,3}.png` and `slideshow-2-hidden-wolves-v1.png`). Beautiful but cognitively noisy — 8 unique robots, name tags, cards, central human, lighting drama. Eye can't find the read. Alex called for schematic.
+
+**Direction explored, then locked**: chalk drawings on an aged slate blackboard in a heavy gothic wood frame, warm candlelight (real lit candle in frame on the left), hand-drawn imperfect chalk strokes. Compatible with the gothic candlelit host scene preceding it because the chalkboard literally sits in the same Victorian study; reads as "the host is teaching you the rules at his table."
+
+Decision tree before locking style:
+- Tarot card spread → rejected (Alex picked chalk)
+- Woodcut / engraving → rejected
+- Silhouette / shadow play → rejected
+- **Chalk on blackboard** → picked. Alex flagged risk of lecture-hall feel; we mitigated by anchoring in slate (not green), gothic frame, warm candle in-frame, hand-drawn imperfect chalk.
+
+### [12:27] gen-chalk-test-v1 (style probe — villagers vs wolves overview)
+
+- **Tool**: openai-image skill, gpt-image-2 `/v1/images/generations` (text-to-image)
+- **Params**: `size=1792x1024`, `quality=medium`
+- **Prompt** (verbatim):
+  > A close-up shot of an aged dark slate blackboard mounted in a heavy carved dark wood gothic frame, leaning against a wall in a candlelit Victorian study. The board surface is genuine deep charcoal-black slate with subtle grey streaks and faint chalk-dust residue (NOT modern green chalkboard). Warm orange candlelight from off-frame on the left bathes the surface, casting soft amber highlights along one edge while leaving the right side in deeper shadow. On the slate, hand-drawn in white chalk: on the LEFT side, a loose cluster of 7 small simple stick-figure villagers — round heads, simple bodies, slightly different sizes, drawn imperfectly like a teachers quick board sketch. Above them the word VILLAGERS written in chalk capital letters. On the RIGHT side, a smaller cluster of 2 stick figures with clear triangular wolf ears and pointed snouts. Above them the word WOLVES written in chalk capital letters. Between the two groups, a vertical wavy chalk line dividing them. The chalk strokes are imperfect, slightly smudged in places, drawn quickly by hand. ONLY these two words appear on the board — no other text, no other labels, no arrows, no decorations. Dark, gothic, atmospheric. Visible chalk dust particles in the warm candlelight. Subtle vignette. Shot on Canon EOS R5, 50mm, f/4, 8k, raw. Aspect ratio 16:9.
+- **Output**: `images/slideshow-chalk-test-v1.png` → later archived to `_archive/images-chalk-rejected/` after high-quality re-roll
+- **Cost**: $0.13
+- **Notes**: First try nailed it. Bonus: model put a real lit candle on a holder at the bottom-left of the frame, partially in-shot — adds depth and ties visually back to the host's candlelit table.
+
+### [13:10] gen-chalk-doctor-test (single-figure case probe)
+
+Multi-figure case worked; needed to verify single-figure case wouldn't feel too sparse on a wide board.
+
+- **Tool**: gpt-image-2 `/v1/images/generations`
+- **Params**: `size=1792x1024`, `quality=medium`
+- **Prompt** (verbatim):
+  > [full chalkboard scene description as above]... a single simple stick-figure villager lying horizontal across the lower middle of the board (eyes drawn as X marks, looking unconscious or sleeping). Standing over them, leaning forward, a second stick figure wearing a wide doctors hat with a chalk-drawn cross symbol on it, holding a small bottle of medicine extended toward the lying figure. Above this scene the word DOCTOR written in chalk capital letters. A small chalk heart symbol floats above the lying villager. The chalk strokes are imperfect, slightly smudged in places, drawn quickly by hand like a teachers quick board sketch. ONLY the word DOCTOR appears as text on the board — no other labels, no captions...
+- **Output**: `images/slideshow-chalk-doctor-test.png` → later archived
+- **Cost**: $0.13
+- **Notes**: Single-figure case works. Model added a small religious crest at top of frame on its own — keeps the gothic mood. Style confirmed for full set.
+
+### [13:21–13:22] gen-7-final-slides (parallel batch, high quality)
+
+After Alex approved the style, regenerated the 2 test images at high quality + generated the remaining 5 in parallel. 7 simultaneous `/v1/images/generations` calls.
+
+- **Tool**: gpt-image-2 `/v1/images/generations`
+- **Params**: `size=1792x1024`, `quality=high` for all
+- **Shared scene preamble** (every prompt opened with): aged dark slate blackboard, heavy carved dark wood gothic frame, candlelit Victorian study, warm orange off-frame candlelight from the left, real lit candle on a holder bottom-left partially in frame, white chalk on charcoal-black slate (NOT green chalkboard), imperfect strokes, slight smudges, visible chalk dust in candlelight, subtle vignette. Shot on Canon EOS R5, 50mm, f/4, 8k, raw. Aspect ratio 16:9.
+
+| Slug | File | Subject prompt fragment | Verdict |
+|------|------|-------------------------|---------|
+| `overview-v1` | `slideshow-chalk-overview-v1.png` | 7 stick-figure villagers LEFT (label VILLAGERS) + 2 wolf-headed figures RIGHT (label WOLVES) + vertical wavy chalk divider | ✅ locked |
+| `day-vote-v1` | `slideshow-chalk-day-vote-v1.png` | top-down circle of 6 villagers, one pointing across the circle, sun upper-left, DAY label | ✅ locked (Alex prefers top-down over later side-view re-roll) |
+| `night-hunt-v1` | `slideshow-chalk-night-hunt-v1.png` | 3 sleeping villagers (drawn as small heads with closed-eye dashes, gpt-image-2 wouldn't render full lying stick bodies), 2 wolves stalking from right, NIGHT label, moon upper-left | ✅ locked |
+| `hidden-wolves-v1` | `slideshow-chalk-hidden-wolves-v1.png` | row of 7 identical stick villagers with question marks above each head, 2 of them with subtle triangular wolf ears (3rd and 7th), WHO? label | ✅ locked |
+| `doctor-v1` | `slideshow-chalk-doctor-v1.png` | doctor with hat + cross + medicine bottle leaning over unconscious villager (X eyes), heart symbol above, DOCTOR label | ✅ locked |
+| `detective-v1` | `slideshow-chalk-detective-v1.png` | villager holding magnifying glass examining a wolf-headed figure, exclamation mark above the wolf, DETECTIVE label | ✅ locked |
+| `maniac-v1` | `slideshow-chalk-maniac-v1.png` | hooded figure with knife + two dead villagers (X eyes) at feet, MANIAC label | ❌ archived — wrong concept (maniac abducts, doesn't kill) |
+
+- **Cost**: 7 × $0.19 = **$1.33**
+
+### [13:38–13:40] re-rolls
+
+**Day-vote v2** (side view with row of stick figures, leftmost pointing across with dashed line):
+- Prompt explicitly forced SIDE VIEW with row of identical stick figures, leftmost arm raised pointing across, sun upper-left.
+- Output: `slideshow-chalk-day-vote-v2.png` → archived
+- Cost: $0.19
+- Outcome: Composition clean and consistent with the doctor/detective row-of-figures style, but Alex preferred v1's top-down style as more graphically interesting (rejected this re-roll).
+
+**Night-hunt v2** (lying stick figures with bodies, matching doctor slide):
+- Prompt explicitly forced "LYING HORIZONTAL ... full stick figure bodies ... eyes drawn as small X marks or short closed-eye dashes". gpt-image-2 STILL refused — defaulted again to small head-only representations with closed-eye dashes and breath/Z motion lines.
+- Output: `slideshow-chalk-night-hunt-v2.png` → archived
+- Cost: $0.19
+- Outcome: Visually similar story to v1; Alex preferred v1 (composition tighter).
+- **Learning**: gpt-image-2 will not draw stick figures lying horizontal as full bodies — it abstracts "sleeping/lying" into head-only with closed eyes. Don't waste re-rolls trying to force it; accept the head-only convention.
+
+**Maniac v2** (abduction concept — no weapon, dragging villager into darkness):
+- Prompt explicitly: no knife, no blade, no weapon, no dead bodies, no X-eye corpses. Hooded figure with arms wrapped around a villager, lifting/dragging them backward, motion dashes trailing left, vertical chalk scratch marks on right edge representing the void.
+- Output: `images/slideshow-chalk-maniac-v2.png` ✅ locked
+- Cost: $0.19
+
+### Final locked set (in `images/`, 7 chalk slides)
+
+| # | File | Used for script scene |
+|---|------|----------------------|
+| 1 | `slideshow-chalk-overview-v1.png` | Scene 7 — "Two teams. Villagers, and werewolves." |
+| 2 | `slideshow-chalk-day-vote-v1.png` | Scene 8 — Day vote |
+| 3 | `slideshow-chalk-night-hunt-v1.png` | Scene 9 — Night hunt |
+| 4 | `slideshow-chalk-hidden-wolves-v1.png` | Scene 10 — Hidden wolves |
+| 5 | `slideshow-chalk-doctor-v1.png` | Scene 11 — Doctor |
+| 6 | `slideshow-chalk-detective-v1.png` | Scene 12 — Detective |
+| 7 | `slideshow-chalk-maniac-v2.png` | Scene 13 — Maniac (**abducts**, not kills — narration line in script.md updated to match) |
+
+Archived (in `_archive/images-chalk-rejected/`):
+- `slideshow-chalk-test-v1.png` (medium-quality test, superseded by `overview-v1`)
+- `slideshow-chalk-doctor-test.png` (medium-quality test, superseded by `doctor-v1`)
+- `slideshow-chalk-day-vote-v2.png` (rejected re-roll)
+- `slideshow-chalk-night-hunt-v2.png` (rejected re-roll)
+- `slideshow-chalk-maniac-v1.png` (wrong concept — killer not abductor)
+
+### Session cost (2026-05-23)
+
+| Item | Cost |
+|------|------|
+| 2 medium-quality style probes (overview, doctor) | $0.26 |
+| 7 high-quality first-pass slides | $1.33 |
+| 3 re-rolls (day-vote v2, night-hunt v2, maniac v2) | $0.57 |
+| **Session total** | **$2.16** |
+
+---
+
+---
+
+## 2026-05-23 (continued) — Part 3 restructure: chunked sub-parts (3a/3b/3c) + bridge
+
+After the 7-slide chalk batch (above), the scene plan was re-architected. Instead of a single Part 3 with slide-per-narration-line (per old `script.md`), Part 3 became **three thematic sub-chunks** with their own narration blocks + multi-slide slideshows, plus a Seedance r2v host bridge between 3b and 3c. This pacing dramatically out-performed the old plan in playback.
+
+### Final scene structure (locked)
+
+| Chunk | Duration | Content |
+|---|---|---|
+| Parts 1+2 | 27.4s | Intro arc + host welcome (unchanged from 2026-05-19 lock) |
+| Part 3a | 16.0s | "Villagers vs werewolves" — 3 chalk slides |
+| Part 3b | 16.05s | "Day / night phases" — 4 chalk slides |
+| Bridge | 8.10s | Seedance r2v host: "But the village has tricks of its own..." |
+| Part 3c | 52.24s | "Special roles + all villagers" — 7 chalk slides |
+| Outro | 6.10s | Seedance r2v host: "Now... you know the rules. The hunt begins." |
+| **Total locked** | **2:05.04** | `clips/parts1-5-locked.mp4` |
+
+### 4 additional chalk images for the expanded 3a/3b/3c
+
+Generated using the same `openai-image` chalk-on-slate template (now canonicalized in that skill). All `quality=high`, `size=1792x1024`, $0.19 each.
+
+| Slug | File | Used in |
+|------|------|---------|
+| `wolves-know-v1` | `images/slideshow-chalk-wolves-know-v1.png` | 3a slide 3 — "THEY KNOW" — 2 wolf-headed stick figures making eye contact with dashed line + paw print between |
+| `aftermath-v1` | `images/slideshow-chalk-aftermath-v1.png` | 3b slide 4 — "GONE" — 4 standing villagers around a fallen one + dawn sun |
+| `all-villagers-v1` | `images/slideshow-chalk-all-villagers-v1.png` | 3c slide 7 — "ALL VILLAGERS" — row of 5 stick figures, 3 with role symbols above (cross/magnifying glass/hood) |
+| `doctor-kills-v1` | `images/slideshow-chalk-doctor-kills-v1.png` | 3c slide 2 — "MISTAKE" — doctor with syringe walking away from dead villager + skull + question mark |
+| `detective-kills-v1` | `images/slideshow-chalk-detective-kills-v1.png` | 3c slide 4 — "SHOOTS ONCE" — detective with magnifying glass + revolver, dashed bullet line to falling target |
+| `maniac-both-die-v1` | `images/slideshow-chalk-maniac-both-die-v1.png` | 3c slide 6 — "BOTH DIE" — wolf attacking maniac, abducted villager dead below, dashed line linking them |
+
+### ElevenLabs narrations (all George `JBFqnCBsd6RMkjVDRZzb`, model `eleven_multilingual_v2`, settings `stability=0.5, similarity_boost=0.75, style=0.5`)
+
+All raw output then treated with `asetrate=44100*0.85,aresample=44100,aecho=0.8:0.7:40:0.3,aresample=48000,loudnorm=I=-20.5:TP=-3.3:LRA=11:linear=true` and saved as 48kHz stereo WAV.
+
+**Part 3a** (`audio/elevenlabs_raw/part3a-treated.wav`, treated 15.99s, cost $0.07):
+> Villagers — and werewolves. `<break time="0.6s"/>` The villagers are many. `<break time="0.3s"/>` But blind. `<break time="0.4s"/>` They don't know who's who. `<break time="0.7s"/>` The werewolves are few. `<break time="0.3s"/>` But they know each other. `<break time="0.5s"/>` And they hide. `<break time="0.3s"/>` In plain sight.
+
+**Part 3b** (`audio/elevenlabs_raw/part3b-treated.wav`, treated 16.05s, cost $0.07):
+> Each day, the village debates. `<break time="0.4s"/>` Suspicions. `<break time="0.3s"/>` Accusations. `<break time="0.4s"/>` A vote is cast — and one of you is gone. `<break time="0.8s"/>` Each night, the wolves move. `<break time="0.5s"/>` Someone wakes up. `<break time="0.4s"/>` And one of you doesn't.
+
+**Bridge** (`audio/elevenlabs_raw/bridge3bc-treated.wav`, treated 7.69s, cost $0.05):
+> But the village has tricks of its own. `<break time="0.5s"/>` Some... `<break time="0.4s"/>` act at night. `<break time="0.5s"/>` They change everything.
+
+**Part 3c v3** (`audio/elevenlabs_raw/part3c-v3-treated.wav`, treated 52.22s, cost $0.10) — *v1 and v2 superseded after Alex added "detective can also kill" and "all three count as villagers" beats*:
+> The Doctor heals one player each night. `<break time="0.3s"/>` That player can't die. `<break time="0.4s"/>` Never the same one twice. `<break time="0.5s"/>` And once per game — `<break time="0.3s"/>` the Doctor can kill instead. `<break time="0.4s"/>` A medical mistake. `<break time="0.9s"/>` The Detective picks a player. `<break time="0.4s"/>` Learns one thing — good, or bad. `<break time="0.4s"/>` Bad means wolf. `<break time="0.3s"/>` Or Maniac. `<break time="0.5s"/>` And once per game — `<break time="0.3s"/>` the Detective can kill too. `<break time="0.9s"/>` The Maniac picks a player each night. `<break time="0.4s"/>` The victim vanishes 'til morning. `<break time="0.4s"/>` Untouchable. `<break time="0.5s"/>` But — `<break time="0.3s"/>` if the Maniac dies, the captive dies too. `<break time="0.9s"/>` And here's the catch. `<break time="0.4s"/>` All three count as villagers. `<break time="0.4s"/>` Same side. `<break time="0.4s"/>` Same goal: kill every wolf. `<break time="0.5s"/>` Even the Maniac.
+
+**Outro** (`audio/elevenlabs_raw/outro-treated.wav`, treated 4.96s, cost $0.05):
+> Now... `<break time="0.5s"/>` you know the rules. `<break time="0.7s"/>` The hunt begins.
+
+### Slideshow timing pattern (used for all three 3a/3b/3c)
+
+Run `silencedetect=noise=-30dB:d=0.5` on the treated WAV. Pauses >1.0s mark slide-section boundaries; pauses 0.7-1.0s are sub-beat moments. Map each visual slide to span between two pauses. Build scenes at those exact durations (slide_dur = section_dur + 0.5s for xfade overlap; sum to total = audio_duration + (N-1)*xfade_duration).
+
+All scenes built with the locked anti-shake recipe: prescale 1792x1024 → 8K → `zoompan z=1+(zend-1)*on/(frames-1)` at 4K → `scale=1920:1080:flags=lanczos` → H.264 yuv420p high crf=18 @ 25fps, no audio.
+
+Chunks assembled with `xfade=fade:duration=0.5` between slides + `acrossfade=d=0.5` (where audio exists). Top-level chunk files:
+- `clips/part3/part3a-v3-swapped.mp4` (Alex's chosen order: overview → hidden-wolves → wolves-know)
+- `clips/part3/part3b-v3.mp4` (day-topdown → day-pointing → night-hunt → aftermath)
+- `clips/part3/part3c-v2.mp4` (doctor → mistake → detective → shoots-once → maniac-abducts → both-die → all-villagers)
+
+### Seedance r2v jobs (bridge + outro)
+
+Both use the same recipe as Part 2's locked clip: upload `images/werewolf-host-table-whiskey-start.jpg` + treated audio WAV to fal storage, submit to `bytedance/seedance-2.0/reference-to-video` with `image_urls` + `audio_urls` (plural) and `@Image1`/`@Audio1` references in the prompt. Output 1280x720@24fps + 44.1kHz audio → converted to 1920x1080@25fps + 48kHz AAC with `loudnorm=I=-20.5:TP=-3.3:LRA=11:linear=true` to match Parts 1/2.
+
+**Bridge** (`clips/part3/bridge3bc-v1.mp4`, 8.10s, cost $2.42):
+- Request ID: `019e563e-a980-7702-8f6e-88e6cd06f9fe`, seed `2044464666`
+- Audio upload (may expire): `https://v3b.fal.media/files/b/0a9b65f3/aHbGROw_AEFRDFL_uMuQI_bridge3bc-treated.wav`
+- Image upload (may expire): `https://v3b.fal.media/files/b/0a9b65f3/IJfqeRIWhgKjliv5h0EqS_werewolf-host-table-whiskey-start.jpg`
+- Video output (may expire): `https://v3b.fal.media/files/b/0a9b6617/tFlw6-cASptSO1pOLLL5J_video.mp4`
+- Params: `duration=8, resolution=720p, aspect_ratio=16:9, generate_audio=true`
+- Prompt verbatim:
+  > The werewolf-headed host from @Image1 speaks the dialogue from @Audio1 with synchronized lip movement matching every word and pause exactly. Preserve the exact voice character, timing, and pauses from @Audio1 — do not regenerate the voice. He sits at the candlelit mahogany table with a crystal whiskey tumbler. Calm, conversational, slightly amused — he hints at a secret. Brief subtle gesture with one hand toward the camera on the line 'tricks of its own'. Candle flames flicker softly in the background. Cinematic, intimate, gothic.
+
+**Outro** (`clips/part3/outro-v1.mp4`, 6.10s, cost $1.81):
+- Request ID: `019e5ab5-6260-7c51-b4ea-c293ae1c7152`, seed `1851109365`
+- Audio upload (may expire): `https://v3b.fal.media/files/b/0a9b8335/WiUmgTjNVxv9iI2vECKUH_outro-treated.wav`
+- Image: reused bridge upload URL above
+- Video output (may expire): `https://v3b.fal.media/files/b/0a9b835e/KlhSmnjA5GO9qAtSLR4Lg_video.mp4`
+- Params: `duration=6, resolution=720p, aspect_ratio=16:9, generate_audio=true`
+- Prompt verbatim:
+  > The werewolf-headed host from @Image1 speaks the dialogue from @Audio1 with synchronized lip movement matching every word and pause exactly. Preserve the exact voice character, timing, and pauses from @Audio1 — do not regenerate the voice. He sits at the candlelit mahogany table. On the word 'Now', he raises the crystal whiskey tumbler in a slow, knowing toast toward the camera and sets it back down. On 'you know the rules', his eyes lock with the camera. On 'The hunt begins', a subtle, predatory smile — the corners of his snout lift slightly, revealing a hint of teeth. He holds the look in silence after the line. Calm, conversational, slightly menacing. Candle flames flicker softly. Cinematic, intimate, gothic.
+
+---
+
+## 2026-05-24 — Full Parts 1-5 assembly (v1 → v6 lock)
+
+Assembled `parts1-2-locked.mp4 + part3a + part3b + bridge + part3c + outro` end-to-end. Took 6 iterations to lock; the bugs and learnings are now also captured in `.claude/skills/ffmpeg/SKILL.md` ("Multi-chunk assembly pitfalls") and `.claude/skills/director/SKILL.md` ("Scene-change transition").
+
+**v1** (`clips/parts1-3-v1.mp4`): naive xfade chain. Output reported as 118s but video stream only rendered 52s — Alex caught it ("there is no 3c part and there is no bridge part"). **Root cause:** `part3a-v3-swapped.mp4` had `format=duration` 15.99s but `stream:v duration` only 14.48s due to a `-t 16.05` flag that padded format without adding frames. xfade chain silently truncated past the first short stream. Also discovered same gap on `parts1-2-locked.mp4` (0.18s) and `bridge3bc-v1.mp4` (0.18s).
+
+**v2** (`clips/parts1-3-v2.mp4`): rebuilt `part3a-v3-swapped.mp4` with scene durations summing exactly to audio length (overview 6.5s + hidden 5.5s + wolves-know 5.0s − 2×0.5s xfade = 16.0s). Added `tpad=stop_mode=clone:stop_duration=0.2` on parts1-2 and bridge in the assembly filter to mask their small video-shorter-than-audio gaps. Worked: video and audio durations matched at 118.2s. ✓
+
+**v3** (after adding outro, `clips/parts1-5-v3.mp4`): switched parts1-2 → 3a transition from plain `xfade=fade` to `xfade=fadeblack:duration=1.0`. Felt good but Alex flagged the audio: George's "Villagers..." started during the fadeblack (acrossfade overlap), not after.
+
+**v4** (`clips/parts1-5-v4.mp4`): tried adding 1.0s held-frame on parts1-2 before fadeblack to push the chalk start later. Audio overlap problem still present — acrossfade by definition overlaps both streams during its window.
+
+**v5** (`clips/parts1-5-v5.mp4`): correct fix — switched from `xfade=fadeblack` to **manual** fade-out + black hold + fade-in built via `fade=t=out + tpad color=black + fade=t=in + concat`. Audio uses `apad` on stream 0 + `adelay` on stream 1 + hard `concat` (no acrossfade), so audio is genuinely silent during the black hold. Timing: 0.4 fade-out + 0.7 black hold + 0.4 fade-in + 0.4 audio delay = ~1.5s gap from "rules" to "Villagers." Hit a `timebase mismatch` error mid-build — `concat` outputs at `1/1000000`, subsequent `xfade` expects `1/12800`. Fixed with `concat=...,fps=25,settb=1/12800`.
+
+**v6** (`clips/parts1-5-v6.mp4` → renamed `clips/parts1-5-locked.mp4`): Alex requested "a bit shorter pause". Trimmed all four components ~25%: fade-out 0.3 + black hold 0.4 + fade-in 0.3 + audio delay 0.3 = ~1.1s gap. **LOCKED at 2:05.04, 90MB.**
+
+The other 4 chunk boundaries (3a→3b→bridge→3c→outro) all use plain `xfade=fade:duration=0.4` + `acrossfade=d=0.4` — those transitions are within the same narrative register (chalkboard-to-chalkboard or chalkboard-to-host-bridge-back) and the soft crossfade reads correctly without needing the black hold.
+
+### Cost summary (2026-05-23 → 2026-05-24, this production arc)
+
+| Category | Items | Cost |
+|----------|-------|------|
+| Pre-chalk rejected (realistic robot-table iterations before pivot) | 4 gpt-image-2 high | $0.76 |
+| Chalk style probes (medium) | 2 gpt-image-2 medium | $0.26 |
+| Chalk full set including re-rolls + expansions | 16 gpt-image-2 high | $3.04 |
+| ElevenLabs narration | 6 George recordings (3a, 3b, bridge, 3c v1+v2+v3, outro) | $0.52 |
+| Seedance r2v | bridge (8s) + outro (6s) | $4.23 |
+| **Total this arc** | | **$8.81** |
+
+Cumulative project spend per `api-spending.csv`: see lines tagged `werewolf-v4-*`, `slideshow-chalk-*`, `part3*`, `bridge3bc`, `outro`.
+
+---
+
+## Pickup notes — where to continue next session
+
+**Locked artifact**: `clips/parts1-5-locked.mp4` (2:05.04). Standalone rules-explainer video — narratively complete on its own.
+
+**Original v4 scope had Part 4 (live app demo)**. Alex decided 2026-05-24: app demo becomes a separate next video, NOT part of this lock. Don't append it here; spawn a new `video-projects/werewolf-app-demo-v1/` workspace when starting it. The demo plan in old `script.md` (lobby capture, theme/player count/roles toggles, AI model selection, generate→preview, names+backstories) is still the right material — just for the next project.
+
+**Polish items considered but not done**:
+- Background music bed at 4% volume (v3 track was working — see MEMORY for the rule). Not added because the chalk slideshow + Seedance r2v dialogue carries enough on its own. Alex didn't request it.
+- URL overlay (`aiwerewolf.net`) was in the old Part 5 plan — moved to the future app demo video's outro, where it makes more sense.
+
+**If reproducing the lock from scratch**: all source images in `images/`, all treated audio in `audio/elevenlabs_raw/`, all sub-chunk videos in `clips/part3/`. Final assembly recipe is the v5/v6 filter chain saved in this file (search "v5" above). Source-chunk durations to preserve: 3a=16.0, 3b=16.048, bridge=8.10, 3c=52.24, outro=6.10. The manual fade transition between parts1-2 and 3a is the only complex spot; everything else is standard `xfade=fade:0.4` + `acrossfade=d=0.4`.
+
+**Skills updated 2026-05-25 with the learnings**: `.claude/skills/ffmpeg/SKILL.md`, `.claude/skills/director/SKILL.md`, `.claude/skills/openai-image/SKILL.md`. Future similar productions should be ~50% faster.

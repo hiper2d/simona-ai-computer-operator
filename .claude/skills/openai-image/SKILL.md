@@ -158,3 +158,36 @@ Images are saved to `generated-images/` in the project root.
 - For edits, images must be PNG or WEBP. If the reference is JPEG, convert first: `sips -s format png input.jpg --out input.png`
 - If images are too large (>25MB), resize first: `sips --resampleWidth 2048 input.png --out input_resized.png`
 - The `--max-time 120` flag kills curl after 2 minutes if the API hangs.
+
+## gpt-image-2 known quirks (learned 2026-05-23)
+
+**Stick figures lying horizontal**: model refuses to draw full-body stick figures lying down — defaults to head-only with closed-eye dashes (looks like a sleeping head on a pillow). Verified across 2 attempts with explicit "lying horizontal, full stick figure body" prompts. Accept the head-only convention or use a different visual metaphor.
+
+**Top-down perspective on figures**: "top-down view of villagers in a circle" gives alien-blob shapes, not stick figures viewed from above. Use side view if you need recognizable figures.
+
+**Mask is loose, not strict**: the `/v1/images/edits` mask parameter does NOT strictly preserve masked-out regions — the model regenerates broadly, even with explicit "do not change the center" instructions. Workaround: composite the original back into the masked region via ffmpeg overlay after the edit, optionally with feathered alpha for soft seams.
+
+**Pleasant surprises**: model sometimes adds atmospheric details on its own — a lit candle in frame, a small religious crest at the top of a gothic frame, a velvet runner on a corridor floor. Don't over-specify the periphery; leave room for these.
+
+## Chalk-on-slate schematic prompt template (proven first-try winner)
+
+For instructional / schematic visuals that need to stay gothic-compatible (rules explainer paired with a cinematic gothic intro), use this opening preamble verbatim and append the per-slide content after. Lands the right slate texture, chalk style, candle in frame, gothic mood consistently at `quality=high`, `size=1792x1024`:
+
+```
+A close-up shot of an aged dark slate blackboard mounted in a heavy carved
+dark wood gothic frame, leaning against a wall in a candlelit Victorian
+study. The board surface is genuine deep charcoal-black slate with subtle
+grey streaks and faint chalk-dust residue (NOT modern green chalkboard).
+Warm orange candlelight from off-frame on the left bathes the surface,
+casting soft amber highlights along one edge while leaving the right side
+in deeper shadow. A real lit candle sits on a holder at the bottom left,
+partially in frame. On the slate, hand-drawn in white chalk: <PER-SLIDE
+SCENE: stick figures, role symbols, action diagrams, etc.>. The chalk
+strokes are imperfect, slightly smudged, drawn quickly by hand like a
+teachers quick board sketch. ONLY the word <CAPTION> appears as text on
+the board — no other labels, no captions. Dark, gothic, atmospheric.
+Visible chalk dust particles in the warm candlelight. Subtle vignette.
+Shot on Canon EOS R5, 50mm, f/4, 8k, raw. Aspect ratio 16:9.
+```
+
+Tested with 14+ chalk slides for the werewolf-rules-v4 project — overview, day/night phases, role figures (Doctor/Detective/Maniac), action variants (heals/kills, abducts/dies), etc. The same preamble produces visually consistent slides every time, which lets a slideshow read as a single board across many scene changes.
