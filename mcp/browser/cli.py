@@ -17,6 +17,7 @@ Usage:
 
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -57,7 +58,9 @@ async def main():
         _usage_and_exit()
 
     command = args.pop(0)
-    client = CDPClient()
+    # CDP_PORT lets callers target a non-default Chrome (e.g. Marlow's
+    # persistent scrape profile on 9223) without disturbing the default 9222.
+    client = CDPClient(port=int(os.environ.get("CDP_PORT", "9222")))
 
     try:
         if command == "tabs":

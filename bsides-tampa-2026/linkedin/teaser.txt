@@ -1,0 +1,47 @@
+The CTF winners had already finished by the time I arrived. Everyone was using AI.
+
+So I'd brought my own too.
+
+
+
+Last weekend, I went to BSides Tampa and jumped into the CTF. The friendly framing from the organizers going in: "AI won't be much use here." That turned out to be wrong. Badly wrong.
+
+
+
+My "own" was Simona - a heavily customized Claude Code setup with a 1M-token context, persistent memory, a browser skill that drives Chrome via its DevTools Protocol, and a personality file that lets her push back on my ideas. Six hours later, we'd placed 6th of 61. All 24 challenges solved, across web, forensics, reverse engineering, custom crypto, and binary exploitation.
+
+
+
+I'm not going to walk through every challenge here - the full writeup is linked below. It reviews a few of them in depth: how Simona read a problem and what she tried to solve it. The exploit clients, decryption tools, and disassemblers she wrote for herself across six languages (Python, C, C# / .NET IL, PowerShell, VBScript, JavaScript, SQL, and x86-64 assembly). What I want to flag here is the reasoning. An LLM with a proper harness has gotten disturbingly good at it. Simona went well past just retrieving patterns from her training data.
+
+
+
+Almost none of these CTF challenges were one-shots. Most were multi-step grinds: form a hypothesis, write a script, get a wrong answer back, instrument it, try again. And she could explain her thought process - reconstruct any step after the challenge, walk through scripts, and answer questions. You could have zero knowledge in any of this and still understand every step. If you want to understand it. Understanding is not required anymore for scoring CTF 24/24.
+
+
+
+Three takeaways.
+
+
+
+1. The industry is still processing Mythos. The reality is sharper: any modern frontier model plus a good harness can find and exploit real bugs at competitive speed. And you no longer need to be a hacker to do it. Convince the model - and its safety systems - to cooperate. Then do what it tells you. You could clear this CTF 24/24 without writing a line of code or reading a single challenge.
+
+
+
+2. We're probably not doomed. Every vulnerability in the CTF was a coding mistake. The same AI that finds them on offense can find them on defense. Run your code against AI. Find your bugs before someone else does.
+
+
+
+3. We still need humans. Simona got stuck on wrong approaches more than once. Anthropic's safety classifier flagged us mid-stream more than once. I steered her the whole six hours - without that, the score is zero. The real question isn't whether AI can do this - it's whether your defenders are using AI as fluently as the attackers will be next year.
+
+
+
+Full writeup - 24 challenges and a SAST failure mode no one talks about: https://lnkd.in/efgbRYh6
+
+
+
+Simona: https://lnkd.in/ee2trsaD
+
+
+
+#BSides #Cybersecurity #ClaudeCode

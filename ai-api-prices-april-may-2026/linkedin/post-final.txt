@@ -1,0 +1,48 @@
+=== HOW TO POST (native image, link in first comment) ===
+1. Paste the POST BODY below into a new LinkedIn post.
+2. Attach the image: linkedin/post-image.png  (the token-meter cover)
+3. Publish.
+4. Immediately add the FIRST COMMENT below.
+NOTE: hyphens used throughout (not em-dashes), per Alex's preference. Body is ~2.7k chars, under LinkedIn's 3000 limit.
+
+============================================================
+POST BODY
+============================================================
+
+A year ago I happily paid $20/month for my AI coding tools. Now I pay 5x that - and the rate card is still climbing.
+
+Everyone's arguing about GitHub Copilot moving to usage-based billing. But that's the symptom. The real move is upstream: the per-token API price itself is going up.
+
+I run an AI Werewolf side project that calls the APIs of every major provider, so I track their pricing release over release. Almost every model that shipped in April-May 2026 is more expensive than the one it replaced:
+
+- OpenAI GPT-5.4 -> 5.5: +100% (doubled to $5/$30)
+- Mistral Medium 3.1 -> 3.5: +275%
+- Google Gemini Flash 3.1 -> 3.5: +200%
+- Moonshot Kimi K2.5 -> K2.6: +46%
+- Z.AI GLM-5 -> 5.1: +39% (roughly doubled over the past year)
+- DeepSeek V3.2 -> V4 Pro: ~flat (spiked, then walked it back with a permanent 75% cut)
+
+Mean increase: +74%. Median: +42%.
+
+Two went the other way:
+- xAI's Grok cut hard (-71%) - but quietly killed its cheapest coding-specific models in the process.
+- Anthropic held Opus flat across three version bumps ($5/$25), even as its score on the DeepSWE coding benchmark roughly doubled. The one spot where the buyer got more for the same money.
+
+And it's not just per-token. It's getting more expensive on three fronts at once:
+- Tokens: the rate card itself, up despite better chips, bigger datacenters, and more efficient inference.
+- Reasoning: nearly every model reasons by default now, burning more thinking tokens per task - tokens you often can't even audit.
+- Harness: Claude Code became unusable on the $20 plan months ago. Comfortable coding now means $100/month. Codex went the same way.
+
+The "Moore's Law for tokens" story - every release cheaper than the last - was a 2023-2024 thing. It's over.
+
+So what do you do? I'm not giving up Claude Code. But I'm finally dusting off a 16GB AMD GPU to see how far local Qwen/Gemma/Mistral have come, just to keep a plan B alive. And here's the thing: companies are already complaining about their AI bills. The squeeze works right up until the people being squeezed start doing the math.
+
+Full writeup - the table, the benchmark, and the whole per-provider read - in the comments.
+
+#AI #LLM #Pricing #API #LocalLLM
+
+============================================================
+FIRST COMMENT (post immediately after)
+============================================================
+
+Full breakdown, with the pricing table, the DeepSWE benchmark, and a read on each provider: https://azelianouski.dev/post/ai-api-prices-april-may-2026

@@ -1,0 +1,59 @@
+Everybody's running the same story this month: GitHub Copilot is moving off flat $20/mo and onto usage-based billing, and the takes write themselves. The cheap subscription era is ending, the AI companies were eating losses, and now the bill is coming due.
+
+
+
+That story is real. But it's the downstream one.
+
+
+
+The number that actually moves is the per-token API price model providers charge - and that has been moving hard, in plain sight, for the last 60 days.
+
+
+
+I run an AI Werewolf side project where AI bots pretend to be human players. Every couple of weeks I update the model roster - new versions ship, old ones deprecate, and I update the pricing config. So I've been watching per-token rates from the inside, across eight providers, for over a year. Across April and May 2026, the average headline price change on a new model release was +74%.
+
+
+
+The numbers, averaged across input and output, per provider:
+
+
+
+- OpenAI GPT-5 → GPT-5.5: +100% (cache-hit price went up 10x, which nobody is writing about)
+
+- Mistral Medium 3.1 → 3.5: +275%
+
+- Google Gemini 3 Flash → 3.5: +200%
+
+- Moonshot Kimi K2.5 → K2.6: +46%
+
+- Z.AI GLM-5 → GLM-5.1: +39%
+
+- DeepSeek Reasoner → V4 Pro: ~flat (launched at +314%, then made a 75%-off promo the permanent rate as of May 31 - input +55%, output -48%, average is a rounding error)
+
+
+
+Two counter-examples. xAI's Grok cut twice in 60 days and is now -71% on average. Anthropic version-bumped Claude 4.6 → 4.7 Opus with no price change at all. Holding flat is itself a position in this environment.
+
+
+
+The DeepSeek reversal is worth its own footnote. The "cheap disruptor" headlines for V3 and original Kimi K2 always glossed over the throughput tax - both were so slow that running them in any latency-sensitive app was painful, regardless of the rate card. The Turbo variants that are actually deployable cost meaningfully more. DeepSeek's permanent V4 Pro cut is the only real walk-back of the cycle.
+
+
+
+Median move across the eight: +42%.
+
+
+
+The Moore's Law for tokens narrative - the one that said every model release would be cheaper than the last - was a 2023–2024 phenomenon. It is no longer happening.
+
+
+
+If you maintain an app that depends on these APIs and your unit economics assume token costs trend down, recheck them. They don't. The Copilot story is the first visible retail consequence of an API-layer move that's been baked in for two months. Cursor, Windsurf, Replit, every agent-style coding tool is looking at the same spreadsheet right now.
+
+
+
+Full writeup with the table, the raw numbers, and a reading of what's actually going on: https://azelianouski.dev/post/ai-api-prices-april-may-2026
+
+
+
+#AI #LLM #Pricing #API
